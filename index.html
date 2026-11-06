@@ -6,56 +6,87 @@
 <title>Hotel La Fontana · Unicentro</title>
 <meta name="description" content="Modelo 3D navegable del entorno del Hotel Estelar La Fontana y Unicentro, Bogotá">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;500&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/cesium@1.147.0/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/cesium@1.147.0/Build/Cesium/Cesium.js"></script>
 <script src="config.js"></script>
 <style>
-  :root{--fg:#fff;--muted:rgba(255,255,255,.74);--glass:rgba(16,20,24,.5);--line:rgba(255,255,255,.18);--accent:#e9b94a}
+  :root{--ink:#111;--paper:#fff;--muted:rgba(255,255,255,.82);--pill:rgba(255,255,255,.9);--line:rgba(0,0,0,.12)}
   *{box-sizing:border-box;margin:0;padding:0}
-  html,body{height:100%;background:#0d1013;color:var(--fg);font-family:Inter,system-ui,sans-serif;overflow:hidden}
+  html,body{height:100%;background:#cfd8de;font-family:Inter,system-ui,sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased}
   #map{position:fixed;inset:0}
   .cesium-viewer-bottom{display:none}
-  .glass{background:var(--glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:14px}
-  header{position:fixed;top:16px;left:16px;padding:12px 16px;max-width:calc(100% - 100px)}
-  header h1{font-size:17px;font-weight:700;letter-spacing:.2px}
-  header p{font-size:12.5px;color:var(--muted);margin-top:2px}
-  #tools{position:fixed;top:16px;right:16px;display:flex;flex-direction:column;gap:8px}
-  #tools button{width:44px;height:44px;display:grid;place-items:center;color:var(--fg);cursor:pointer}
-  #tools button.on{background:rgba(233,185,74,.85);color:#16130b}
-  #tools svg{width:22px;height:22px}
-  #compass svg{transition:transform .05s linear}
-  #bar{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:4px;padding:6px;max-width:calc(100% - 32px);overflow-x:auto}
-  #bar button{background:transparent;border:0;color:var(--fg);font:600 13px Inter,sans-serif;padding:9px 13px;border-radius:9px;cursor:pointer;white-space:nowrap}
-  #bar button:hover{background:rgba(255,255,255,.1)}
-  #bar button.on{background:rgba(255,255,255,.2)}
-  #hint{position:fixed;bottom:76px;left:50%;transform:translateX(-50%);font-size:12.5px;color:var(--muted);padding:8px 13px;transition:opacity .6s;white-space:nowrap}
-  #pins .pin{position:fixed;transform:translate(-50%,-100%);pointer-events:none;transition:opacity .2s}
-  #pins .pin span{display:block;padding:6px 10px;font-size:12.5px;font-weight:600;white-space:nowrap;border-radius:9px}
-  #pins .pin i{display:block;width:2px;height:34px;margin:0 auto;background:linear-gradient(var(--accent),transparent)}
-  #pins .pin.main span{background:var(--accent);color:#16130b}
-  #loader{position:fixed;inset:0;display:grid;place-items:center;background:#0d1013;z-index:9;transition:opacity .8s}
-  #loader .box{width:min(320px,80vw);text-align:center}
-  #loader .track{height:3px;background:rgba(255,255,255,.12);border-radius:3px;margin-top:14px;overflow:hidden}
-  #loader .fill{height:100%;width:0;background:var(--accent);transition:width .3s}
-  #loader small{display:block;margin-top:10px;color:var(--muted);font-size:12px}
-  #warn{position:fixed;top:84px;left:16px;max-width:min(420px,calc(100% - 32px));font-size:12.5px;padding:10px 13px;color:#ffe2a8;display:none}
-  @media (max-width:560px){header h1{font-size:15px}#bar button{padding:8px 9px;font-size:12px}#hint{font-size:11.5px}}
+
+  /* menu lateral (estilo dmcc) */
+  #menu{position:fixed;left:0;bottom:0;width:178px;background:var(--paper);box-shadow:0 8px 30px rgba(0,0,0,.18);z-index:3}
+  #menu button{display:flex;justify-content:space-between;align-items:center;width:100%;border:0;background:transparent;
+    font:500 13px Inter,sans-serif;color:var(--ink);text-align:left;padding:10px 14px;border-top:1px solid var(--line);cursor:pointer}
+  #menu button:first-child{border-top:0}
+  #menu button:hover{background:#f2f2f2}
+  #menu button.on{background:#111;color:#fff}
+  #brand{position:fixed;left:16px;top:16px;background:var(--paper);padding:10px 14px;box-shadow:0 8px 30px rgba(0,0,0,.15);z-index:3}
+  #brand b{display:block;font:500 17px "Playfair Display",serif;letter-spacing:.4px;color:var(--ink)}
+  #brand small{display:block;font:600 9.5px Inter,sans-serif;letter-spacing:2.6px;color:#777;text-transform:uppercase;margin-top:2px}
+
+  /* tarjetas de distancia */
+  #cards{position:fixed;left:210px;bottom:22px;display:flex;gap:44px;color:#fff;text-shadow:0 1px 10px rgba(0,0,0,.45);pointer-events:none;z-index:2}
+  #cards .c small{display:block;font:600 11px Inter,sans-serif;letter-spacing:1.4px;text-transform:uppercase;line-height:1.35;opacity:.95}
+  #cards .c div{display:flex;align-items:baseline;gap:6px;margin-top:6px}
+  #cards .c b{font:400 40px "Playfair Display",serif;line-height:1}
+  #cards .c span{font:400 17px "Playfair Display",serif;line-height:1.05}
+
+  /* pines */
+  #pins .pin{position:fixed;transform:translate(-50%,-100%);pointer-events:none;transition:opacity .25s;z-index:1}
+  #pins .pin span{display:block;padding:4px 8px;background:var(--pill);color:#222;font:600 10px Inter,sans-serif;letter-spacing:1px;
+    text-transform:uppercase;border-radius:6px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.18)}
+  #pins .pin i{display:block;width:1px;height:14px;margin:0 auto;background:rgba(255,255,255,.85)}
+  #pins .pin.main span{background:rgba(255,255,255,.94);padding:8px 12px 6px;border-radius:2px;text-align:center}
+  #pins .pin.main span b{display:block;font:500 19px "Playfair Display",serif;letter-spacing:.5px;text-transform:none;color:#111}
+  #pins .pin.main span em{display:block;font:600 8.5px Inter,sans-serif;font-style:normal;letter-spacing:3px;color:#666}
+  #pins .pin.main i{height:60px;width:2px;background:linear-gradient(rgba(255,255,255,.95),rgba(255,255,255,0))}
+
+  /* herramientas */
+  #tools{position:fixed;top:16px;right:16px;display:flex;flex-direction:column;gap:8px;z-index:3}
+  #tools button{width:42px;height:42px;display:grid;place-items:center;color:#111;background:var(--paper);border:0;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.15)}
+  #tools button.on{background:#111;color:#fff}
+  #tools svg{width:20px;height:20px}
+  #ctx{position:fixed;top:16px;right:70px;display:flex;background:var(--paper);box-shadow:0 6px 20px rgba(0,0,0,.15);z-index:3}
+  #ctx button{border:0;background:transparent;font:600 11px Inter,sans-serif;letter-spacing:1px;text-transform:uppercase;padding:0 12px;height:42px;cursor:pointer;color:#111}
+  #ctx button.on{background:#111;color:#fff}
+  #hint{position:fixed;top:68px;right:70px;font-size:11.5px;color:#fff;background:rgba(0,0,0,.45);padding:7px 11px;transition:opacity .6s;z-index:2;max-width:330px}
+  #warn{position:fixed;top:78px;left:16px;max-width:min(380px,calc(100% - 32px));font-size:12px;padding:9px 12px;color:#5a3b00;background:#fff3d6;display:none;z-index:3;box-shadow:0 6px 20px rgba(0,0,0,.15)}
+
+  #loader{position:fixed;inset:0;display:grid;place-items:center;background:#e9ecee;z-index:9;transition:opacity .8s}
+  #loader .box{width:min(320px,80vw);text-align:center;color:#111}
+  #loader b{font:500 22px "Playfair Display",serif}
+  #loader .track{height:2px;background:rgba(0,0,0,.1);margin-top:16px;overflow:hidden}
+  #loader .fill{height:100%;width:0;background:#111;transition:width .3s}
+  #loader small{display:block;margin-top:10px;color:#666;font-size:11px;letter-spacing:1.5px;text-transform:uppercase}
+
+  @media (max-width:760px){
+    #menu{width:100%;display:flex;overflow-x:auto}
+    #menu button{border-top:0;border-left:1px solid var(--line);white-space:nowrap;width:auto;padding:12px 14px}
+    #cards{left:16px;bottom:62px;gap:24px}#cards .c b{font-size:30px}#cards .c span{font-size:14px}
+    #ctx{right:16px;top:auto;bottom:118px}#hint{display:none}
+    #tools{top:16px}
+  }
 </style>
 </head>
 <body>
 <div id="map"></div>
 <div id="pins"></div>
-<header class="glass"><h1>Hotel La Fontana · Unicentro</h1><p>Calle 127 · Bogotá D.C.</p></header>
+<div id="brand"><b>Hotel La Fontana</b><small>Unicentro · Bogotá</small></div>
+<div id="ctx"><button data-c="modelo" class="on">Modelo</button><button data-c="real">Ciudad real</button></div>
 <div id="tools">
-  <button id="compass" class="glass" title="Mirar al norte"><svg viewBox="0 0 40 40"><path d="M20 3l6 17h-12z" fill="#e9564a"/><path d="M20 37l-6-17h12z" fill="#fff"/></svg></button>
-  <button id="orbit" class="glass" title="Girar alrededor del hotel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg></button>
-  <button id="sun" class="glass" title="Sombras"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+  <button id="compass" title="Mirar al norte"><svg viewBox="0 0 40 40"><path d="M20 3l6 17h-12z" fill="#e9564a"/><path d="M20 37l-6-17h12z" fill="currentColor"/></svg></button>
+  <button id="orbit" title="Girar alrededor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg></button>
+  <button id="sun" title="Sombras"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
 </div>
-<div id="hint" class="glass">Arrastra para moverte · Ctrl/clic derecho + arrastrar para pivotear · rueda para acercar</div>
-<div id="warn" class="glass"></div>
-<nav id="bar" class="glass"></nav>
-<div id="loader"><div class="box"><b>Cargando modelo 3D</b><div class="track"><div class="fill" id="fill"></div></div><small id="pct">Preparando escena</small></div></div>
+<div id="hint">Arrastra para moverte · clic derecho o Ctrl + arrastrar para pivotear · rueda para acercar</div>
+<div id="warn"></div>
+<nav id="menu"></nav>
+<div id="cards"></div>
+<div id="loader"><div class="box"><b>Hotel La Fontana</b><div class="track"><div class="fill" id="fill"></div></div><small id="pct">Preparando escena</small></div></div>
 
 <script>
 (async () => {
@@ -68,130 +99,152 @@
   const viewer = new C.Viewer('map', {
     animation: false, timeline: false, baseLayerPicker: false, geocoder: false, homeButton: false, sceneModePicker: false,
     navigationHelpButton: false, fullscreenButton: false, infoBox: false, selectionIndicator: false,
-    baseLayer: google ? false : new C.ImageryLayer(new C.OpenStreetMapImageryProvider({url: 'https://tile.openstreetmap.org/'})),
+    baseLayer: google ? false : new C.ImageryLayer(new C.OpenStreetMapImageryProvider({url: 'https://tile.openstreetmap.org/', maximumLevel: 19})),
     msaaSamples: 4, shadows: true, terrainShadows: C.ShadowMode.RECEIVE_ONLY,
   });
   const scene = viewer.scene;
   scene.globe.show = !google;
   scene.highDynamicRange = true;
   scene.postProcessStages.tonemapper = C.Tonemapper.PBR_NEUTRAL;
-  scene.postProcessStages.exposure = 1.05;
+  scene.postProcessStages.exposure = 1.3;
   scene.postProcessStages.fxaa.enabled = true;
+  // bruma atmosferica clara, como la referencia
   scene.skyAtmosphere.show = true;
-  scene.fog.enabled = true; scene.fog.density = 1.4e-4;
-  scene.light = new C.SunLight({intensity: 2.3});
-  // 10:30 a.m. en Bogota (UTC-5): sol alto y sombras cortas como en los renders de Unreal
-  viewer.clock.currentTime = C.JulianDate.fromIso8601('2026-11-06T15:30:00Z');
-  viewer.clock.shouldAnimate = false;
-  const sm = viewer.shadowMap; sm.size = 4096; sm.softShadows = true; sm.darkness = 0.45; sm.maximumDistance = 2500;
+  scene.skyAtmosphere.hueShift = -0.02; scene.skyAtmosphere.saturationShift = -0.25; scene.skyAtmosphere.brightnessShift = 0.15;
+  scene.atmosphere.lightIntensity = 12; scene.atmosphere.brightnessShift = 0.08;
+  scene.fog.enabled = true; scene.fog.density = 2.4e-4; scene.fog.minimumBrightness = 0.6;
+  scene.light = new C.SunLight({intensity: 3.2});
+  viewer.clock.currentTime = C.JulianDate.fromIso8601('2026-11-06T15:30:00Z'); // 10:30 a.m. Bogota
+  viewer.clock.shouldAnimate = true; viewer.clock.multiplier = 0;
+  const sm = viewer.shadowMap; sm.size = 4096; sm.softShadows = true; sm.darkness = 0.32; sm.maximumDistance = 2500;
   const ctl = scene.screenSpaceCameraController;
-  ctl.minimumZoomDistance = 4; ctl.maximumZoomDistance = 9000;
-  ctl.enableCollisionDetection = true;
+  ctl.minimumZoomDistance = 4; ctl.maximumZoomDistance = 12000; ctl.enableCollisionDetection = true;
 
-  // georreferencia: origen local EPSG:9377 (4884540, 2077660), z = 2549 msnm -> elipsoide + geoide
+  // georreferencia: origen local EPSG:9377 (4884540, 2077660), z = 2549 msnm -> elipsoide (+ geoide)
   const h = google ? geo.h : 0;
-  const origin = C.Cartesian3.fromDegrees(geo.lon, geo.lat, h);
-  const M = C.Transforms.eastNorthUpToFixedFrame(origin);
-  const R = C.Matrix4.fromRotationTranslation(C.Matrix3.fromRotationZ(C.Math.toRadians(geo.rot_deg)));
-  C.Matrix4.multiply(M, R, M);
+  const M = C.Transforms.eastNorthUpToFixedFrame(C.Cartesian3.fromDegrees(geo.lon, geo.lat, h));
+  C.Matrix4.multiply(M, C.Matrix4.fromRotationTranslation(C.Matrix3.fromRotationZ(C.Math.toRadians(geo.rot_deg))), M);
   C.Matrix4.multiplyByUniformScale(M, geo.scale, M);
 
-  step(10, 'Ciudad real (Google 3D)');
-  let tiles = null;
+  step(10, 'Ciudad');
+  let tiles = null, clip = null;
   if (google) {
     try {
       tiles = cfg.googleMapsKey
         ? await C.createGooglePhotorealistic3DTileset({key: cfg.googleMapsKey}, {maximumScreenSpaceError: 8})
         : await C.createGooglePhotorealistic3DTileset(undefined, {maximumScreenSpaceError: 8});
       tiles.shadows = C.ShadowMode.RECEIVE_ONLY;
-      // recorta Google donde va nuestro modelo
-      tiles.clippingPolygons = new C.ClippingPolygonCollection({polygons: [new C.ClippingPolygon({positions: C.Cartesian3.fromDegreesArray(geo.clip.flat())})]});
+      clip = new C.ClippingPolygonCollection({polygons: [new C.ClippingPolygon({positions: C.Cartesian3.fromDegreesArray(geo.clip.flat())})]});
+      tiles.clippingPolygons = clip;
       scene.primitives.add(tiles);
-    } catch (e) { console.error(e); warn('No se pudo cargar Google 3D (revisa la llave en config.js). Se muestra solo el modelo.'); scene.globe.show = true; }
-  } else warn('Falta la llave de Cesium ion / Google en config.js: se muestra el modelo sobre un mapa plano.');
+    } catch (e) { console.error(e); warn('No se pudo cargar la ciudad fotorrealista (revisa la llave en config.js).'); scene.globe.show = true; }
+  } else warn('Falta la llave de Google 3D en config.js: el entorno se muestra sobre un mapa plano.');
 
   step(30, 'Edificios, vías y terreno');
-  const load = (url, p, t) => C.Model.fromGltfAsync({url, modelMatrix: M, shadows: C.ShadowMode.ENABLED, backFaceCulling: true,
-      imageBasedLighting: undefined}).then(m => { scene.primitives.add(m); step(p, t); return m; });
+  const load = (url, p, t) => C.Model.fromGltfAsync({url, modelMatrix: M, shadows: C.ShadowMode.ENABLED})
+    .then(m => { scene.primitives.add(m); step(p, t); return m; });
   const [ciudad, arboles] = await Promise.all([load('modelo/ciudad.glb', 75, 'Árboles'), load('modelo/arboles.glb', 90, 'Listo')]);
   arboles.shadows = C.ShadowMode.CAST_ONLY;
 
-  // ---------- pines
-  const pins = [
-    {label: 'Hotel Estelar La Fontana', lon: geo.hotel[0], lat: geo.hotel[1], up: 30, main: true},
-    {label: 'Centro Comercial Unicentro', lon: -74.04145, lat: 4.70208, up: 25},
+  // contexto: nuestro modelo (Google recortado) o ciudad real completa
+  document.querySelectorAll('#ctx button').forEach(b => b.onclick = () => {
+    if (b.dataset.c === 'real' && !tiles) { warn('La ciudad real necesita la llave de Google 3D en config.js.'); return; }
+    document.querySelectorAll('#ctx button').forEach(x => x.classList.toggle('on', x === b));
+    const real = b.dataset.c === 'real';
+    ciudad.show = arboles.show = !real;
+    if (tiles) clip.enabled = !real;
+  });
+
+  // ---------- lugares
+  const hotelLL = geo.hotel, uniLL = [-74.04145, 4.70208];
+  const places = [
+    {label: 'Hotel La Fontana', sub: 'ESTELAR', ll: hotelLL, up: 45, main: true},
+    {label: 'Unicentro', ll: uniLL, up: 30},
+    {label: 'Usaquén', ll: [-74.0307, 4.6949], up: 20},
+    {label: 'Parque de la 93', ll: [-74.0483, 4.6765], up: 20},
+    {label: 'Cerros Orientales', ll: [-74.0180, 4.7020], up: 300},
   ];
   const pinsEl = document.getElementById('pins');
-  pins.forEach(p => {
-    p.pos = C.Cartesian3.fromDegrees(p.lon, p.lat, h + 11 + p.up);
+  places.forEach(p => {
+    p.pos = C.Cartesian3.fromDegrees(p.ll[0], p.ll[1], h + p.up);
     p.el = document.createElement('div'); p.el.className = 'pin' + (p.main ? ' main' : '');
-    p.el.innerHTML = `<span class="${p.main ? '' : 'glass'}">${p.label}</span><i></i>`; pinsEl.appendChild(p.el);
+    p.el.innerHTML = p.main ? `<span><b>${p.label}</b><em>${p.sub}</em></span><i></i>` : `<span>${p.label}</span><i></i>`;
+    pinsEl.appendChild(p.el);
   });
-  const tmp = new C.Cartesian2();
+  const tmp = new C.Cartesian2(), occ = new C.EllipsoidalOccluder(C.Ellipsoid.WGS84, C.Cartesian3.ZERO);
   scene.postRender.addEventListener(() => {
-    pins.forEach(p => {
+    const cam = scene.camera.positionWC; occ.cameraPosition = cam;
+    places.forEach(p => {
       const s = C.SceneTransforms.worldToWindowCoordinates(scene, p.pos, tmp);
-      const vis = s && C.Cartesian3.distance(scene.camera.positionWC, p.pos) < 6000;
+      const d = C.Cartesian3.distance(cam, p.pos);
+      const vis = s && occ.isPointVisible(p.pos) && d < (p.main ? 20000 : 9000) && d > 60;
       p.el.style.opacity = vis ? 1 : 0;
       if (s) { p.el.style.left = s.x + 'px'; p.el.style.top = s.y + 'px'; }
     });
     document.querySelector('#compass svg').style.transform = `rotate(${-C.Math.toDegrees(scene.camera.heading)}deg)`;
   });
 
-  // ---------- vistas
-  const hotel = C.Cartesian3.fromDegrees(geo.hotel[0], geo.hotel[1], h + 12);
-  const uni = C.Cartesian3.fromDegrees(-74.04145, 4.70208, h + 8);
-  const views = [
-    {label: 'Hotel La Fontana', target: hotel, heading: 215, pitch: -32, range: 380},
-    {label: 'Fachada Calle 127', target: hotel, heading: 175, pitch: -12, range: 150},
-    {label: 'Unicentro', target: uni, heading: 330, pitch: -35, range: 650},
-    {label: 'Vista aérea', target: C.Cartesian3.fromDegrees(geo.lon - 0.001, geo.lat + 0.001, h), heading: 20, pitch: -58, range: 2300},
-  ];
-  const bar = document.getElementById('bar');
-  function go(v, i, dur = 2.2) {
-    stopOrbit();
-    [...bar.children].forEach((b, k) => b.classList.toggle('on', k === i));
-    const s = new C.BoundingSphere(v.target, 1);
-    viewer.camera.flyToBoundingSphere(s, {duration: dur, offset: new C.HeadingPitchRange(C.Math.toRadians(v.heading), C.Math.toRadians(v.pitch), v.range)});
-  }
-  views.forEach((v, i) => { const b = document.createElement('button'); b.textContent = v.label; b.onclick = () => go(v, i); bar.appendChild(b); });
+  // tarjetas: distancia real en linea recta desde el hotel
+  const geod = new C.EllipsoidGeodesic();
+  const dist = ll => { geod.setEndPoints(C.Cartographic.fromDegrees(...hotelLL), C.Cartographic.fromDegrees(...ll)); return geod.surfaceDistance; };
+  document.getElementById('cards').innerHTML = places.filter(p => !p.main && p.up < 100).map(p => {
+    const m = dist(p.ll); const v = m < 1000 ? [Math.round(m / 10) * 10, 'metros'] : [(m / 1000).toFixed(1).replace('.', ','), 'km'];
+    return `<div class="c"><small>${p.label}</small><div><b>${v[0]}</b><span>${v[1]}</span></div></div>`;
+  }).join('');
 
-  // ---------- orbita alrededor del hotel
+  // ---------- vistas (menu)
+  const at = (ll, up = 0) => C.Cartesian3.fromDegrees(ll[0], ll[1], h + up);
+  const views = [
+    {label: 'Ubicación', target: at([-74.0400, 4.6930]), heading: 345, pitch: -24, range: 5200},
+    {label: 'Master plan', target: at([geo.lon - 0.001, geo.lat + 0.001]), heading: 20, pitch: -55, range: 2300},
+    {label: 'Hotel La Fontana', target: at(hotelLL, 12), heading: 215, pitch: -30, range: 380},
+    {label: 'Fachada Calle 127', target: at(hotelLL, 10), heading: 180, pitch: -10, range: 170},
+    {label: 'Unicentro', target: at(uniLL, 8), heading: 330, pitch: -35, range: 650},
+  ];
+  const menu = document.getElementById('menu');
+  function go(i, dur = 2.4) {
+    stopOrbit();
+    [...menu.children].forEach((b, k) => b.classList.toggle('on', k === i));
+    const v = views[i];
+    viewer.camera.flyToBoundingSphere(new C.BoundingSphere(v.target, 1), {duration: dur,
+      offset: new C.HeadingPitchRange(C.Math.toRadians(v.heading), C.Math.toRadians(v.pitch), v.range)});
+  }
+  views.forEach((v, i) => { const b = document.createElement('button'); b.textContent = v.label; b.onclick = () => go(i); menu.appendChild(b); });
+
+  // ---------- orbita (pivote sobre el centro de la pantalla)
   let orbiting = false, orbitFn = null;
   function stopOrbit() {
     if (!orbiting) return; orbiting = false; document.getElementById('orbit').classList.remove('on');
     viewer.clock.onTick.removeEventListener(orbitFn); viewer.camera.lookAtTransform(C.Matrix4.IDENTITY);
   }
-  function startOrbit() {
-    const cam = viewer.camera;
-    const tgt = pickCenter() || hotel;
-    const range = Math.max(120, Math.min(1500, C.Cartesian3.distance(cam.positionWC, tgt)));
-    let hd = cam.heading; const pt = Math.min(-0.15, cam.pitch);
-    orbiting = true; document.getElementById('orbit').classList.add('on');
-    let last = performance.now();
-    orbitFn = () => { const now = performance.now(); hd += (now - last) * 0.00006; last = now; cam.lookAt(tgt, new C.HeadingPitchRange(hd, pt, range)); };
-    viewer.clock.onTick.addEventListener(orbitFn);
-  }
-  function pickCenter() {
+  function center() {
     const c = new C.Cartesian2(viewer.canvas.clientWidth / 2, viewer.canvas.clientHeight / 2);
     const p = scene.pickPositionSupported ? scene.pickPosition(c) : undefined;
-    return p && C.defined(p) ? p : undefined;
+    return p && C.defined(p) ? p : at(hotelLL, 12);
   }
-  viewer.clock.shouldAnimate = true; viewer.clock.multiplier = 0; // ticks sin mover el sol
+  function startOrbit() {
+    const cam = viewer.camera, tgt = center();
+    const range = Math.max(120, Math.min(6000, C.Cartesian3.distance(cam.positionWC, tgt)));
+    let hd = cam.heading; const pt = Math.min(-0.12, cam.pitch); let last = performance.now();
+    orbiting = true; document.getElementById('orbit').classList.add('on');
+    orbitFn = () => { const now = performance.now(); hd += (now - last) * 0.00005; last = now; cam.lookAt(tgt, new C.HeadingPitchRange(hd, pt, range)); };
+    viewer.clock.onTick.addEventListener(orbitFn);
+  }
   document.getElementById('orbit').onclick = () => orbiting ? stopOrbit() : startOrbit();
   ['pointerdown', 'wheel'].forEach(ev => viewer.canvas.addEventListener(ev, () => { stopOrbit(); document.getElementById('hint').style.opacity = 0; }, {passive: true}));
   document.getElementById('compass').onclick = () => {
-    const tgt = pickCenter() || hotel; const r = C.Cartesian3.distance(viewer.camera.positionWC, tgt);
+    const tgt = center(); const r = C.Cartesian3.distance(viewer.camera.positionWC, tgt);
     viewer.camera.flyToBoundingSphere(new C.BoundingSphere(tgt, 1), {duration: 1, offset: new C.HeadingPitchRange(0, viewer.camera.pitch, r)});
   };
   const sunBtn = document.getElementById('sun'); sunBtn.classList.add('on');
   sunBtn.onclick = () => { viewer.shadows = !viewer.shadows; sunBtn.classList.toggle('on', viewer.shadows); };
-  // celulares: sombras apagadas por rendimiento
-  if (Math.min(innerWidth, innerHeight) < 700) { viewer.shadows = false; sunBtn.classList.remove('on'); viewer.resolutionScale = Math.min(devicePixelRatio, 1.5) / devicePixelRatio * 1.0; }
+  if (Math.min(innerWidth, innerHeight) < 700) { viewer.shadows = false; sunBtn.classList.remove('on'); }
 
   function warn(t) { const w = document.getElementById('warn'); w.textContent = t; w.style.display = 'block'; }
 
-  go(views[0], 0, 0);
+  // como la referencia: ciudad fotorrealista por defecto cuando hay llave
+  if (tiles) document.querySelector('#ctx button[data-c="real"]').click();
+  go(2, 0);
   step(100, 'Listo');
   const L = document.getElementById('loader'); setTimeout(() => { L.style.opacity = 0; setTimeout(() => L.remove(), 800); }, 600);
   setTimeout(startOrbit, 1500);
