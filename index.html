@@ -366,15 +366,20 @@
   ];
 
   let currentView = 0;
-  function flyToView(idx, dur = 1.8) {
+  function flyToView(idx, dur = 2.0) {
     stopOrbit();
     currentView = idx;
     const v = views[idx];
     [...menu.children].forEach((b, k) => b.classList.toggle('on', k === idx));
-    viewer.camera.flyToBoundingSphere(new C.BoundingSphere(v.target, 1), {
-      offset: new C.HeadingPitchRange(C.Math.toRadians(v.heading), C.Math.toRadians(v.pitch), v.range),
-      duration: dur
-    });
+    if (dur <= 0) {
+      viewer.camera.lookAt(v.target, new C.HeadingPitchRange(C.Math.toRadians(v.heading), C.Math.toRadians(v.pitch), v.range));
+      viewer.camera.lookAtTransform(C.Matrix4.IDENTITY);
+    } else {
+      viewer.camera.flyToBoundingSphere(new C.BoundingSphere(v.target, 1), {
+        offset: new C.HeadingPitchRange(C.Math.toRadians(v.heading), C.Math.toRadians(v.pitch), v.range),
+        duration: dur
+      });
+    }
   }
 
   const menu = document.getElementById('menu');
