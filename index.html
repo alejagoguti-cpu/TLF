@@ -47,11 +47,15 @@
 
   
   /* panel de iluminacion (estilo dmcc) */
-  #panelLuz{position:fixed;top:16px;right:70px;background:var(--paper);box-shadow:0 8px 30px rgba(0,0,0,.18);z-index:4;padding:14px 16px;width:310px;border-radius:3px;display:none;flex-direction:column;gap:12px}
+  #panelLuz{position:fixed;top:68px;right:16px;background:var(--paper);box-shadow:0 8px 30px rgba(0,0,0,.22);z-index:5;padding:14px 16px;width:320px;border-radius:4px;display:none;flex-direction:column;gap:12px}
   #panelLuz.on{display:flex}
   #panelLuz .tit{display:flex;justify-content:space-between;align-items:center;font:600 11px Inter,sans-serif;letter-spacing:1.5px;text-transform:uppercase;color:#111}
-  #panelLuz .horas{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-  #panelLuz .horas button{border:1px solid var(--line);background:#fafafa;padding:7px 4px;font:600 11px Inter,sans-serif;color:#222;cursor:pointer;border-radius:2px;transition:all .15s}
+  #panelLuz .modo-luz{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  #panelLuz .modo-luz button{border:1px solid var(--line);background:#fafafa;padding:8px 6px;font:700 11.5px Inter,sans-serif;color:#222;cursor:pointer;border-radius:2px;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s}
+  #panelLuz .modo-luz button:hover{background:#f0f0f0}
+  #panelLuz .modo-luz button.on{background:#111;color:#fff;border-color:#111}
+  #panelLuz .horas{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+  #panelLuz .horas button{border:1px solid var(--line);background:#fafafa;padding:6px 2px;font:600 10.5px Inter,sans-serif;color:#222;cursor:pointer;border-radius:2px;transition:all .15s;text-align:center}
   #panelLuz .horas button:hover{background:#f0f0f0}
   #panelLuz .horas button.on{background:#111;color:#fff;border-color:#111}
   #panelLuz .fil{display:flex;flex-direction:column;gap:5px}
@@ -71,7 +75,7 @@
   #ctx{position:fixed;top:16px;right:70px;display:flex;background:var(--paper);box-shadow:0 6px 20px rgba(0,0,0,.15);z-index:3}
   #ctx button{border:0;background:transparent;font:600 11px Inter,sans-serif;letter-spacing:1px;text-transform:uppercase;padding:0 12px;height:42px;cursor:pointer;color:#111}
   #ctx button.on{background:#111;color:#fff}
-  #hint{position:fixed;top:68px;right:70px;font-size:11.5px;color:#fff;background:rgba(0,0,0,.45);padding:7px 11px;transition:opacity .6s;z-index:2;max-width:330px}
+  #hint{position:fixed;top:68px;left:50%;transform:translateX(-50%);font-size:11.5px;color:#fff;background:rgba(0,0,0,.55);padding:7px 14px;border-radius:20px;transition:opacity .6s;z-index:2;white-space:nowrap;pointer-events:none}
   #warn{position:fixed;top:78px;left:16px;max-width:min(380px,calc(100% - 32px));font-size:12px;padding:9px 12px;color:#5a3b00;background:#fff3d6;display:none;z-index:3;box-shadow:0 6px 20px rgba(0,0,0,.15)}
 
   #loader{position:fixed;inset:0;display:grid;place-items:center;background:#e9ecee;z-index:9;transition:opacity .8s}
@@ -85,7 +89,7 @@
     #menu{width:100%;display:flex;overflow-x:auto}
     #menu button{border-top:0;border-left:1px solid var(--line);white-space:nowrap;width:auto;padding:12px 14px}
     #cards{left:16px;bottom:62px;gap:24px}#cards .c b{font-size:30px}#cards .c span{font-size:14px}
-    #ctx{right:16px;top:auto;bottom:118px}#hint{display:none}#panelLuz{top:auto;bottom:170px;right:16px;left:16px;width:auto}
+    #ctx{right:16px;top:auto;bottom:118px}#hint{position:fixed;top:68px;left:50%;transform:translateX(-50%);font-size:11.5px;color:#fff;background:rgba(0,0,0,.55);padding:7px 14px;border-radius:20px;transition:opacity .6s;z-index:2;white-space:nowrap;pointer-events:none}#panelLuz{top:auto;bottom:170px;right:16px;left:16px;width:auto}
     #tools{top:16px}
   }
 </style>
@@ -97,20 +101,26 @@
 <div id="ctx"><button data-c="modelo" class="on">Modelo</button><button data-c="real">Ciudad real</button></div>
 
 <div id="panelLuz">
-  <div class="tit"><span>Iluminación & Sol</span><b id="txtHora">10:30 AM</b></div>
+  <div class="tit"><span>Iluminación & Hora</span><b id="txtHora">10:30 AM</b></div>
+  <div class="modo-luz">
+    <button id="btnModoDia" class="on">☀️ Modo Día</button>
+    <button id="btnModoNoche">🌙 Modo Noche</button>
+  </div>
   <div class="horas">
-    <button data-h="7.5">🌅 07:30</button>
+    <button data-h="6.5">🌅 06:30</button>
     <button data-h="10.5" class="on">☀️ 10:30</button>
-    <button data-h="13.0">🌞 13:00</button>
-    <button data-h="17.25">🌇 17:15</button>
+    <button data-h="13.5">🌞 13:30</button>
+    <button data-h="17.5">🌇 17:30</button>
+    <button data-h="20.5">🌙 20:30</button>
+    <button data-h="23.5">✨ 23:30</button>
   </div>
   <div class="fil">
-    <label><span>Hora solar (Bogotá)</span><b id="valHora">10:30 AM</b></label>
-    <input type="range" id="slHora" min="6.0" max="19.0" step="0.25" value="10.5">
+    <label><span>Hora del día (Bogotá)</span><b id="valHora">10:30 AM</b></label>
+    <input type="range" id="slHora" min="0.0" max="23.75" step="0.25" value="10.5">
   </div>
   <div class="fil">
     <label><span>Intensidad de luz</span><b id="valInt">3.2</b></label>
-    <input type="range" id="slInt" min="0.5" max="6.0" step="0.1" value="3.2">
+    <input type="range" id="slInt" min="0.2" max="6.0" step="0.1" value="3.2">
   </div>
   <div class="shd-row">
     <span>Sombras proyectadas</span>
@@ -277,42 +287,81 @@
     const tgt = center(); const r = C.Cartesian3.distance(viewer.camera.positionWC, tgt);
     viewer.camera.flyToBoundingSphere(new C.BoundingSphere(tgt, 1), {duration: 1, offset: new C.HeadingPitchRange(0, viewer.camera.pitch, r)});
   };
-  // control interactivo de iluminacion (sol, hora, intensidad y sombras)
+  // motor interactivo de iluminacion dia/noche y sol
+  let curHour = 10.5, isNight = false, baseInt = 3.2;
+
   function formatHora(hDec) {
-    const hh = Math.floor(hDec);
-    const mm = Math.round((hDec % 1) * 60);
+    const hNorm = ((hDec % 24) + 24) % 24;
+    const hh = Math.floor(hNorm);
+    const mm = Math.round((hNorm % 1) * 60) % 60;
     const ampm = hh >= 12 ? 'PM' : 'AM';
     const h12 = hh > 12 ? hh - 12 : (hh === 0 ? 12 : hh);
     return `${String(h12).padStart(2,'0')}:${String(mm).padStart(2,'0')} ${ampm}`;
   }
 
-  function setHora(hDec) {
-    const utc = (hDec + 5) % 24;
+  function applyLuz(hDec, forceNight = null) {
+    curHour = ((hDec % 24) + 24) % 24;
+    const autoNight = curHour < 5.75 || curHour > 18.15;
+    isNight = forceNight !== null ? forceNight : autoNight;
+
+    const utc = (curHour + 5) % 24;
     const uh = Math.floor(utc);
     const um = Math.floor((utc % 1) * 60);
     const iso = `2026-11-06T${String(uh).padStart(2,'0')}:${String(um).padStart(2,'0')}:00Z`;
     viewer.clock.currentTime = C.JulianDate.fromIso8601(iso);
-    const txt = formatHora(hDec);
+
+    const txt = formatHora(curHour);
     document.getElementById('txtHora').textContent = txt;
     document.getElementById('valHora').textContent = txt;
-    document.getElementById('slHora').value = hDec;
+    document.getElementById('slHora').value = curHour;
+
+    document.getElementById('btnModoDia').classList.toggle('on', !isNight);
+    document.getElementById('btnModoNoche').classList.toggle('on', isNight);
     document.querySelectorAll('#panelLuz .horas button').forEach(b => {
-      b.classList.toggle('on', Math.abs(parseFloat(b.dataset.h) - hDec) < 0.2);
+      b.classList.toggle('on', Math.abs(parseFloat(b.dataset.h) - curHour) < 0.5);
     });
+
+    if (isNight) {
+      // Modo noche: iluminacion lunar ambiental suave y cielo nocturno
+      scene.light = new C.DirectionalLight({
+        direction: new C.Cartesian3(-0.35, -0.55, -0.75),
+        color: new C.Color(0.60, 0.72, 0.98),
+        intensity: Math.max(0.9, baseInt * 0.45)
+      });
+      scene.skyAtmosphere.brightnessShift = -0.75;
+      scene.atmosphere.lightIntensity = 3.0;
+      scene.atmosphere.brightnessShift = -0.5;
+      scene.postProcessStages.exposure = 0.95;
+      scene.fog.density = 1.3e-4;
+      scene.fog.minimumBrightness = 0.15;
+    } else {
+      // Modo dia: sol directo con sombras calibradas
+      scene.light = new C.SunLight({ intensity: baseInt });
+      scene.skyAtmosphere.brightnessShift = 0.15;
+      scene.atmosphere.lightIntensity = 12.0;
+      scene.atmosphere.brightnessShift = 0.08;
+      scene.postProcessStages.exposure = 1.3;
+      scene.fog.density = 2.4e-4;
+      scene.fog.minimumBrightness = 0.6;
+    }
   }
 
+  document.getElementById('btnModoDia').onclick = () => applyLuz(10.5, false);
+  document.getElementById('btnModoNoche').onclick = () => applyLuz(21.0, true);
+
   document.querySelectorAll('#panelLuz .horas button').forEach(b => {
-    b.onclick = () => setHora(parseFloat(b.dataset.h));
+    b.onclick = () => applyLuz(parseFloat(b.dataset.h));
   });
 
   const slHora = document.getElementById('slHora');
-  slHora.oninput = () => setHora(parseFloat(slHora.value));
+  slHora.oninput = () => applyLuz(parseFloat(slHora.value));
 
   const slInt = document.getElementById('slInt');
   slInt.oninput = () => {
-    const val = parseFloat(slInt.value);
-    document.getElementById('valInt').textContent = val.toFixed(1);
-    scene.light.intensity = val;
+    baseInt = parseFloat(slInt.value);
+    document.getElementById('valInt').textContent = baseInt.toFixed(1);
+    if (!isNight) scene.light.intensity = baseInt;
+    else scene.light.intensity = Math.max(0.9, baseInt * 0.45);
   };
 
   const btnShd = document.getElementById('btnShd');
@@ -336,7 +385,7 @@
   function warn(t) { const w = document.getElementById('warn'); w.textContent = t; w.style.display = 'block'; }
 
   // como la referencia: ciudad fotorrealista por defecto cuando hay llave
-  if (tiles) document.querySelector('#ctx button[data-c="real"]').click();
+  // Modelo 3D visible por defecto
   go(2, 0);
   step(100, 'Listo');
   const L = document.getElementById('loader'); setTimeout(() => { L.style.opacity = 0; setTimeout(() => L.remove(), 800); }, 600);
