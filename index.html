@@ -3,50 +3,47 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Hotel La Fontana – Unicentro</title>
-<meta name="description" content="Modelo 3D arquitectónico fotorrealista del Hotel Estelar La Fontana y Unicentro, Bogotá">
+<title>Hotel La Fontana – Unicentro | 3D Ultra Realista</title>
+<meta name="description" content="Visualizador 3D fotorrealista con Three.js, NASA-AMMOS/3DTilesRendererJS y pmndrs/postprocessing">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;500&display=swap" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/cesium@1.147.0/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/cesium@1.147.0/Build/Cesium/Cesium.js"></script>
 <script src="config.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.168.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.168.0/examples/jsm/",
+    "3d-tiles-renderer": "https://unpkg.com/3d-tiles-renderer@0.5.4/build/index.js",
+    "3d-tiles-renderer/plugins": "https://unpkg.com/3d-tiles-renderer@0.5.4/build/index.plugins.js",
+    "postprocessing": "https://unpkg.com/postprocessing@6.36.0/build/index.js"
+  }
+}
+</script>
 <style>
-  :root{--ink:#111;--paper:#fff;--muted:rgba(255,255,255,.82);--pill:rgba(255,255,255,.9);--line:rgba(0,0,0,.12)}
+  :root{--ink:#111;--paper:#fff;--muted:rgba(255,255,255,.85);--pill:rgba(255,255,255,.92);--line:rgba(0,0,0,.12)}
   *{box-sizing:border-box;margin:0;padding:0}
-  html,body{height:100%;background:#cfd8de;font-family:Inter,system-ui,sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased}
-  #map{position:fixed;inset:0}
-  .cesium-viewer-bottom{display:none}
+  html,body{height:100%;width:100%;background:#0a0e14;font-family:Inter,system-ui,sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased}
+  #webgl-canvas{position:fixed;inset:0;width:100%;height:100%;display:block;outline:none}
 
-  /* menu lateral (estilo dmcc / ren3d) */
-  #menu{position:fixed;left:0;bottom:0;width:178px;background:var(--paper);box-shadow:0 8px 30px rgba(0,0,0,.18);z-index:3}
-  #menu button{display:flex;justify-content:space-between;align-items:center;width:100%;border:0;background:transparent;
-    font:500 13px Inter,sans-serif;color:var(--ink);text-align:left;padding:10px 14px;border-top:1px solid var(--line);cursor:pointer}
-  #menu button:first-child{border-top:0}
-  #menu button:hover{background:#f2f2f2}
-  #menu button.on{background:#111;color:#fff}
-  #brand{position:fixed;left:16px;top:16px;background:var(--paper);padding:10px 14px;box-shadow:0 8px 30px rgba(0,0,0,.15);z-index:3}
+  /* Marca superior */
+  #brand{position:fixed;left:18px;top:18px;background:var(--paper);padding:10px 16px;box-shadow:0 8px 30px rgba(0,0,0,.25);z-index:10;border-radius:2px}
   #brand b{display:block;font:500 17px "Playfair Display",serif;letter-spacing:.4px;color:var(--ink)}
-  #brand small{display:block;font:600 9.5px Inter,sans-serif;letter-spacing:2.6px;color:#777;text-transform:uppercase;margin-top:2px}
+  #brand small{display:block;font:600 9.5px Inter,sans-serif;letter-spacing:2.5px;color:#666;text-transform:uppercase;margin-top:2px}
 
-  /* tarjetas de distancia */
-  #cards{position:fixed;left:210px;bottom:22px;display:flex;gap:44px;color:#fff;text-shadow:0 1px 10px rgba(0,0,0,.45);pointer-events:none;z-index:2}
-  #cards .c small{display:block;font:600 11px Inter,sans-serif;letter-spacing:1.4px;text-transform:uppercase;line-height:1.35;opacity:.95}
-  #cards .c div{display:flex;align-items:baseline;gap:6px;margin-top:6px}
-  #cards .c b{font:400 40px "Playfair Display",serif;line-height:1}
-  #cards .c span{font:400 17px "Playfair Display",serif;line-height:1.05}
+  /* Selector de Contexto */
+  #ctx{position:fixed;top:18px;right:74px;display:flex;background:var(--paper);box-shadow:0 6px 22px rgba(0,0,0,.2);z-index:10;border-radius:2px;overflow:hidden}
+  #ctx button{border:0;background:transparent;font:600 11px Inter,sans-serif;letter-spacing:1px;text-transform:uppercase;padding:0 14px;height:42px;cursor:pointer;color:#222;transition:all .15s}
+  #ctx button.on{background:#111;color:#fff}
 
-  /* pines */
-  #pins .pin{position:fixed;transform:translate(-50%,-100%);pointer-events:none;transition:opacity .25s;z-index:1}
-  #pins .pin span{display:block;padding:4px 8px;background:var(--pill);color:#222;font:600 10px Inter,sans-serif;letter-spacing:1px;
-    text-transform:uppercase;border-radius:6px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.18)}
-  #pins .pin i{display:block;width:1px;height:14px;margin:0 auto;background:rgba(255,255,255,.85)}
-  #pins .pin.main span{background:rgba(255,255,255,.94);padding:8px 12px 6px;border-radius:2px;text-align:center}
-  #pins .pin.main span b{display:block;font:500 19px "Playfair Display",serif;letter-spacing:.5px;text-transform:none;color:#111}
-  #pins .pin.main span em{display:block;font:600 8.5px Inter,sans-serif;font-style:normal;letter-spacing:3px;color:#666}
-  #pins .pin.main i{height:60px;width:2px;background:linear-gradient(rgba(255,255,255,.95),rgba(255,255,255,0))}
+  /* Botones de Herramientas */
+  #tools{position:fixed;top:18px;right:18px;display:flex;flex-direction:column;gap:8px;z-index:10}
+  #tools button{width:42px;height:42px;display:grid;place-items:center;color:#111;background:var(--paper);border:0;cursor:pointer;box-shadow:0 6px 22px rgba(0,0,0,.2);border-radius:2px;transition:all .15s}
+  #tools button:hover{background:#f5f5f5}
+  #tools button.on{background:#111;color:#fff}
+  #tools svg{width:20px;height:20px}
 
-  /* panel de iluminacion (estilo dmcc) */
-  #panelLuz{position:fixed;top:68px;right:16px;background:var(--paper);box-shadow:0 8px 30px rgba(0,0,0,.22);z-index:5;padding:14px 16px;width:320px;border-radius:4px;display:none;flex-direction:column;gap:12px}
+  /* Panel Interactivo de Iluminacion y Sombras */
+  #panelLuz{position:fixed;top:70px;right:18px;background:var(--paper);box-shadow:0 12px 36px rgba(0,0,0,.3);z-index:15;padding:16px 18px;width:320px;border-radius:4px;display:none;flex-direction:column;gap:12px}
   #panelLuz.on{display:flex}
   #panelLuz .tit{display:flex;justify-content:space-between;align-items:center;font:600 11px Inter,sans-serif;letter-spacing:1.5px;text-transform:uppercase;color:#111}
   #panelLuz .modo-luz{display:grid;grid-template-columns:1fr 1fr;gap:6px}
@@ -66,35 +63,55 @@
   #panelLuz .shd-row button{border:1px solid var(--line);background:#fafafa;padding:5px 12px;font:600 11px Inter,sans-serif;cursor:pointer;border-radius:2px}
   #panelLuz .shd-row button.on{background:#111;color:#fff;border-color:#111}
 
-  /* herramientas */
-  #tools{position:fixed;top:16px;right:16px;display:flex;flex-direction:column;gap:8px;z-index:3}
-  #tools button{width:42px;height:42px;display:grid;place-items:center;color:#111;background:var(--paper);border:0;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.15)}
-  #tools button.on{background:#111;color:#fff}
-  #tools svg{width:20px;height:20px}
-  #ctx{position:fixed;top:16px;right:70px;display:flex;background:var(--paper);box-shadow:0 6px 20px rgba(0,0,0,.15);z-index:3}
-  #ctx button{border:0;background:transparent;font:600 11px Inter,sans-serif;letter-spacing:1px;text-transform:uppercase;padding:0 12px;height:42px;cursor:pointer;color:#111}
-  #ctx button.on{background:#111;color:#fff}
-  #hint{position:fixed;top:68px;left:50%;transform:translateX(-50%);font-size:11.5px;color:#fff;background:rgba(0,0,0,.55);padding:7px 14px;border-radius:20px;transition:opacity .6s;z-index:2;white-space:nowrap;pointer-events:none}
-  #warn{position:fixed;top:78px;left:16px;max-width:min(380px,calc(100% - 32px));font-size:12px;padding:9px 12px;color:#5a3b00;background:#fff3d6;display:none;z-index:3;box-shadow:0 6px 20px rgba(0,0,0,.15)}
+  /* Menu lateral de Vistas (estilo DMCC) */
+  #menu{position:fixed;left:0;bottom:0;width:185px;background:var(--paper);box-shadow:0 8px 30px rgba(0,0,0,.22);z-index:10}
+  #menu button{display:flex;justify-content:space-between;align-items:center;width:100%;border:0;background:transparent;
+    font:500 13px Inter,sans-serif;color:var(--ink);text-align:left;padding:11px 16px;border-top:1px solid var(--line);cursor:pointer;transition:background .15s}
+  #menu button:first-child{border-top:0}
+  #menu button:hover{background:#f2f2f2}
+  #menu button.on{background:#111;color:#fff}
 
-  #loader{position:fixed;inset:0;display:grid;place-items:center;background:#e9ecee;z-index:9;transition:opacity .8s}
-  #loader .box{width:min(320px,80vw);text-align:center;color:#111}
-  #loader b{font:500 22px "Playfair Display",serif}
-  #loader .track{height:2px;background:rgba(0,0,0,.1);margin-top:16px;overflow:hidden}
-  #loader .fill{height:100%;width:0;background:#111;transition:width .3s}
-  #loader small{display:block;margin-top:10px;color:#666;font-size:11px;letter-spacing:1.5px;text-transform:uppercase}
+  /* Tarjetas de Distancia */
+  #cards{position:fixed;left:215px;bottom:24px;display:flex;gap:44px;color:#fff;text-shadow:0 1px 12px rgba(0,0,0,.6);pointer-events:none;z-index:10}
+  #cards .c small{display:block;font:600 11px Inter,sans-serif;letter-spacing:1.4px;text-transform:uppercase;line-height:1.35;opacity:.95}
+  #cards .c div{display:flex;align-items:baseline;gap:6px;margin-top:6px}
+  #cards .c b{font:400 38px "Playfair Display",serif;line-height:1}
+  #cards .c span{font:400 16px "Playfair Display",serif;line-height:1.05}
+
+  /* Pines 3D flotantes */
+  #pins{position:fixed;inset:0;pointer-events:none;z-index:9;overflow:hidden}
+  #pins .pin{position:absolute;transform:translate(-50%,-100%);transition:opacity .25s}
+  #pins .pin span{display:block;padding:5px 9px;background:var(--pill);color:#111;font:600 10px Inter,sans-serif;letter-spacing:1px;
+    text-transform:uppercase;border-radius:4px;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+  #pins .pin i{display:block;width:1.5px;height:16px;margin:0 auto;background:rgba(255,255,255,.9)}
+  #pins .pin.main span{background:rgba(255,255,255,.96);padding:8px 14px 6px;border-radius:2px;text-align:center}
+  #pins .pin.main span b{display:block;font:500 18px "Playfair Display",serif;letter-spacing:.5px;text-transform:none;color:#111}
+  #pins .pin.main span em{display:block;font:600 8.5px Inter,sans-serif;font-style:normal;letter-spacing:3px;color:#666}
+  #pins .pin.main i{height:55px;width:2px;background:linear-gradient(rgba(255,255,255,.95),rgba(255,255,255,0))}
+
+  /* Indicador de ayuda y avisos */
+  #hint{position:fixed;top:70px;left:50%;transform:translateX(-50%);font-size:11.5px;color:#fff;background:rgba(0,0,0,.65);padding:7px 16px;border-radius:20px;transition:opacity .6s;z-index:10;white-space:nowrap;pointer-events:none}
+  #warn{position:fixed;top:78px;left:18px;max-width:min(380px,calc(100% - 36px));font-size:12px;padding:9px 12px;color:#5a3b00;background:#fff3d6;display:none;z-index:15;box-shadow:0 6px 20px rgba(0,0,0,.2)}
+
+  /* Pantalla de Carga */
+  #loader{position:fixed;inset:0;display:grid;place-items:center;background:#0d1117;z-index:100;transition:opacity .8s}
+  #loader .box{width:min(340px,82vw);text-align:center;color:#fff}
+  #loader b{font:500 24px "Playfair Display",serif;display:block;color:#f0f6fc}
+  #loader .track{height:3px;background:rgba(255,255,255,.15);margin-top:18px;overflow:hidden;border-radius:2px}
+  #loader .fill{height:100%;width:0;background:linear-gradient(90deg,#7dd3fc,#34d399);transition:width .3s}
+  #loader small{display:block;margin-top:12px;color:#8b949e;font-size:11px;letter-spacing:1.6px;text-transform:uppercase}
 
   @media (max-width:760px){
     #menu{width:100%;display:flex;overflow-x:auto}
     #menu button{border-top:0;border-left:1px solid var(--line);white-space:nowrap;width:auto;padding:12px 14px}
-    #cards{left:16px;bottom:62px;gap:24px}#cards .c b{font-size:30px}#cards .c span{font-size:14px}
-    #ctx{right:16px;top:auto;bottom:118px}#hint{position:fixed;top:68px;left:50%;transform:translateX(-50%);font-size:11.5px;color:#fff;background:rgba(0,0,0,.55);padding:7px 14px;border-radius:20px;transition:opacity .6s;z-index:2;white-space:nowrap;pointer-events:none}#panelLuz{top:auto;bottom:170px;right:16px;left:16px;width:auto}
-    #tools{top:16px}
+    #cards{left:18px;bottom:64px;gap:24px}#cards .c b{font-size:30px}#cards .c span{font-size:13px}
+    #ctx{right:18px;top:auto;bottom:118px}#panelLuz{top:auto;bottom:170px;right:18px;left:18px;width:auto}
+    #tools{top:18px}
   }
 </style>
 </head>
 <body>
-<div id="map"></div>
+<canvas id="webgl-canvas"></canvas>
 <div id="pins"></div>
 <div id="brand"><b>Hotel La Fontana</b><small>Unicentro – Bogotá</small></div>
 <div id="ctx"><button data-c="modelo" class="on">Modelo</button><button data-c="real">Ciudad real</button></div>
@@ -118,8 +135,8 @@
     <input type="range" id="slHora" min="0.0" max="23.75" step="0.25" value="10.5">
   </div>
   <div class="fil">
-    <label><span>Intensidad de luz</span><b id="valInt">3.2</b></label>
-    <input type="range" id="slInt" min="0.2" max="6.0" step="0.1" value="3.2">
+    <label><span>Intensidad de luz</span><b id="valInt">2.8</b></label>
+    <input type="range" id="slInt" min="0.2" max="5.0" step="0.1" value="2.8">
   </div>
   <div class="shd-row">
     <span>Sombras proyectadas</span>
@@ -136,172 +153,245 @@
 <div id="warn"></div>
 <nav id="menu"></nav>
 <div id="cards"></div>
-<div id="loader"><div class="box"><b>Hotel La Fontana</b><div class="track"><div class="fill" id="fill"></div></div><small id="pct">Preparando escena</small></div></div>
+<div id="loader"><div class="box"><b>Hotel La Fontana</b><div class="track"><div class="fill" id="fill"></div></div><small id="pct">Inicializando Three.js & Postprocessing</small></div></div>
 
-<script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { TilesRenderer } from '3d-tiles-renderer';
+import { GoogleCloudAuthPlugin, ReorientationPlugin } from '3d-tiles-renderer/plugins';
+import * as POST from 'postprocessing';
+
 (async () => {
-  const C = Cesium, cfg = window.TLF_CONFIG || {};
-  const step = (p, t) => { document.getElementById('fill').style.width = p + '%'; document.getElementById('pct').textContent = t; };
+  const step = (p, t) => {
+    const f = document.getElementById('fill'); if (f) f.style.width = p + '%';
+    const pc = document.getElementById('pct'); if (pc) pc.textContent = t;
+  };
+  const warn = (t) => { const w = document.getElementById('warn'); w.textContent = t; w.style.display = 'block'; };
+
   const geo = await (await fetch('geo.json')).json();
-  const google = !!(cfg.googleMapsKey || cfg.cesiumIonToken);
-  if (cfg.cesiumIonToken) C.Ion.defaultAccessToken = cfg.cesiumIonToken;
+  const cfg = window.TLF_CONFIG || {};
 
-  const viewer = new C.Viewer('map', {
-    animation: false, timeline: false, baseLayerPicker: false, geocoder: false, homeButton: false, sceneModePicker: false,
-    navigationHelpButton: false, fullscreenButton: false, infoBox: false, selectionIndicator: false,
-    baseLayer: new C.ImageryLayer(new C.OpenStreetMapImageryProvider({url: 'https://tile.openstreetmap.org/', maximumLevel: 19})),
-    msaaSamples: 4, shadows: true, terrainShadows: C.ShadowMode.RECEIVE_ONLY,
+  // 1. Escena y Camara Three.js
+  const canvas = document.getElementById('webgl-canvas');
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xa4c2db);
+  scene.fog = new THREE.FogExp2(0xa4c2db, 0.00015);
+
+  const camera = new THREE.PerspectiveCamera(46, window.innerWidth / window.innerHeight, 1, 60000);
+  camera.position.set(-250, 480, 750);
+
+  // 2. Renderer con High-Performance y Sombras Suaves
+  const renderer = new THREE.WebGLRenderer({
+    canvas,
+    powerPreference: 'high-performance',
+    antialias: false,
+    stencil: false,
+    depth: true
   });
-  const scene = viewer.scene;
-  scene.globe.show = true;
-  scene.highDynamicRange = true;
-  scene.postProcessStages.tonemapper = C.Tonemapper.PBR_NEUTRAL;
-  scene.postProcessStages.exposure = 1.3;
-  scene.postProcessStages.fxaa.enabled = true;
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-  // Bruma atmosférica clara y calibrada según referente
-  scene.skyAtmosphere.show = true;
-  scene.skyAtmosphere.hueShift = -0.02; scene.skyAtmosphere.saturationShift = -0.25; scene.skyAtmosphere.brightnessShift = 0.15;
-  scene.atmosphere.lightIntensity = 12; scene.atmosphere.brightnessShift = 0.08;
-  scene.fog.enabled = true; scene.fog.density = 2.2e-4; scene.fog.minimumBrightness = 0.6;
-  scene.light = new C.SunLight({intensity: 3.2});
-  viewer.clock.currentTime = C.JulianDate.fromIso8601('2026-11-06T15:30:00Z'); // 10:30 a.m. Bogotá
-  viewer.clock.shouldAnimate = true; viewer.clock.multiplier = 0;
-  const sm = viewer.shadowMap; sm.size = 4096; sm.softShadows = true; sm.darkness = 0.32; sm.maximumDistance = 2500;
-  const ctl = scene.screenSpaceCameraController;
-  ctl.minimumZoomDistance = 4; ctl.maximumZoomDistance = 12000; ctl.enableCollisionDetection = true;
+  // 3. Postprocessing pipeline con pmndrs/postprocessing
+  const composer = new POST.EffectComposer(renderer);
+  composer.addPass(new POST.RenderPass(scene, camera));
 
-  // Ambient Occlusion para sombras de contacto fotorealistas
-  try {
-    if (C.PostProcessStageLibrary.isAmbientOcclusionSupported(scene)) {
-      const ao = scene.postProcessStages.add(C.PostProcessStageLibrary.createAmbientOcclusionStage());
-      ao.uniforms.ambientOcclusionOnly = false;
-      ao.uniforms.intensity = 1.6;
-      ao.uniforms.bias = 0.1;
-      ao.uniforms.lengthCap = 0.45;
-      ao.uniforms.stepSize = 1.0;
-      ao.uniforms.blur = true;
-    }
-  } catch(e) { console.warn('Ambient occlusion:', e); }
+  const bloomEffect = new POST.BloomEffect({
+    intensity: 0.35,
+    luminanceThreshold: 0.85,
+    luminanceSmoothing: 0.25,
+    mipmapBlur: true
+  });
 
-  // Georreferencia: origen local EPSG:9377 (4884540, 2077660), z = 2549 msnm -> elipsoide (+ geoide)
-  // Elevacion +0.6 m para acople suave sobre el terreno base sin z-fighting
-  const h = (google ? geo.h : 0) + 0.6;
-  const M = C.Transforms.eastNorthUpToFixedFrame(C.Cartesian3.fromDegrees(geo.lon, geo.lat, h));
-  C.Matrix4.multiply(M, C.Matrix4.fromRotationTranslation(C.Matrix3.fromRotationZ(C.Math.toRadians(geo.rot_deg))), M);
-  C.Matrix4.multiplyByUniformScale(M, geo.scale, M);
+  const toneMappingEffect = new POST.ToneMappingEffect({
+    mode: POST.ToneMappingMode.ACES_FILMIC,
+    resolution: 256,
+    whitePoint: 4.0,
+    middleGrey: 0.6
+  });
 
-  step(10, 'Ciudad');
+  const vignetteEffect = new POST.VignetteEffect({
+    offset: 0.35,
+    darkness: 0.35
+  });
+
+  const smaaEffect = new POST.SMAAEffect();
+
+  const effectPass = new POST.EffectPass(camera, bloomEffect, toneMappingEffect, vignetteEffect, smaaEffect);
+  composer.addPass(effectPass);
+
+  // 4. Luces Arquitectonicas Calibradas
+  const hemiLight = new THREE.HemisphereLight(0xfff6ea, 0x5b6572, 1.4);
+  scene.add(hemiLight);
+
+  const sunLight = new THREE.DirectionalLight(0xfffaed, 2.8);
+  sunLight.position.set(450, 850, 350);
+  sunLight.castShadow = true;
+  sunLight.shadow.mapSize.width = 4096;
+  sunLight.shadow.mapSize.height = 4096;
+  sunLight.shadow.camera.near = 100;
+  sunLight.shadow.camera.far = 4000;
+  sunLight.shadow.bias = -0.0001;
+  const d = 1200;
+  sunLight.shadow.camera.left = -d;
+  sunLight.shadow.camera.right = d;
+  sunLight.shadow.camera.top = d;
+  sunLight.shadow.camera.bottom = -d;
+  scene.add(sunLight);
+
+  // 5. NASA-AMMOS / 3DTilesRendererJS (Google Photorealistic 3D Tiles)
+  step(20, 'Cargando Google 3D Tiles');
   let tiles = null;
-  if (google) {
+  if (cfg.googleMapsKey) {
     try {
-      tiles = cfg.googleMapsKey
-        ? await C.createGooglePhotorealistic3DTileset({key: cfg.googleMapsKey}, {maximumScreenSpaceError: 8})
-        : await C.createGooglePhotorealistic3DTileset(undefined, {maximumScreenSpaceError: 8});
-      tiles.shadows = C.ShadowMode.RECEIVE_ONLY;
-      // Sin polígono de corte que genere vacíos negros: la ciudad real se extiende continuo hasta los cerros
-      scene.primitives.add(tiles);
-    } catch (e) { console.error(e); warn('No se pudo cargar la ciudad fotorrealista (revisa la llave en config.js).'); }
-  } else warn('Falta la llave de Google 3D en config.js: el entorno se muestra sobre mapa base.');
+      tiles = new TilesRenderer('https://tile.googleapis.com/v1/3dtiles/root.json');
+      tiles.registerPlugin(new GoogleCloudAuthPlugin({ apiToken: cfg.googleMapsKey }));
+      tiles.registerPlugin(new ReorientationPlugin({
+        up: '+y',
+        lat: geo.lat,
+        lon: geo.lon,
+        height: geo.h,
+        recenter: true
+      }));
+      scene.add(tiles.group);
+    } catch(e) {
+      console.error(e);
+      warn('No se pudo cargar Google 3D Tiles con la llave configurada.');
+    }
+  } else {
+    warn('Falta googleMapsKey en config.js para la ciudad 3D fotorrealista.');
+  }
 
-  step(30, 'Edificios, vías y terreno PBR');
-  const load = (url, p, t) => C.Model.fromGltfAsync({url, modelMatrix: M, shadows: C.ShadowMode.ENABLED})
-    .then(m => { scene.primitives.add(m); step(p, t); return m; });
-  const [ciudad, arboles] = await Promise.all([load('modelo/ciudad.glb', 75, 'Árboles volumétricos'), load('modelo/arboles.glb', 90, 'Listo')]);
-  arboles.shadows = C.ShadowMode.ENABLED;
+  // 6. Carga de Edificios, Vías, Andenes y Árboles Botánicos
+  step(45, 'Cargando arquitectura PBR');
+  const gltfLoader = new GLTFLoader();
 
-  // Contexto: nuestro modelo arquitectónico PBR o ciudad satelital pura
+  const loadGLTF = (url, prog, txt) => new Promise((resolve, reject) => {
+    gltfLoader.load(url, (gltf) => {
+      step(prog, txt);
+      resolve(gltf.scene);
+    }, undefined, reject);
+  });
+
+  let ciudadGroup = new THREE.Group();
+  scene.add(ciudadGroup);
+
+  try {
+    const [ciudadScene, arbolesScene] = await Promise.all([
+      loadGLTF('modelo/ciudad.glb', 75, 'Cargando árboles botánicos 3D'),
+      loadGLTF('modelo/arboles.glb', 90, 'Configurando escena ultra realista')
+    ]);
+
+    // Posicionar modelo ligeramente sobre el terreno para evitar z-fighting
+    ciudadScene.position.set(0, 0.6, 0);
+    ciudadScene.traverse((child) => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+        if (child.material) {
+          child.material.envMapIntensity = 1.0;
+        }
+      }
+    });
+    ciudadGroup.add(ciudadScene);
+
+    arbolesScene.position.set(0, 0.6, 0);
+    arbolesScene.traverse((child) => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+    ciudadGroup.add(arbolesScene);
+  } catch(err) {
+    console.error('Error cargando modelos:', err);
+  }
+
+  // 7. Controles de Cámara
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.05;
+  controls.screenSpacePanning = false;
+  controls.minDistance = 25;
+  controls.maxDistance = 15000;
+  controls.maxPolarAngle = Math.PI / 2 - 0.02; // Evitar pasar por debajo del suelo
+  controls.target.set(-246, 15, -291); // Foco en Hotel La Fontana
+
+  // 8. Contexto: Modelo Arquitectónico vs Ciudad Real Pura
   document.querySelectorAll('#ctx button').forEach(b => b.onclick = () => {
     if (b.dataset.c === 'real' && !tiles) { warn('La ciudad real necesita la llave de Google 3D en config.js.'); return; }
     document.querySelectorAll('#ctx button').forEach(x => x.classList.toggle('on', x === b));
     const real = b.dataset.c === 'real';
-    ciudad.show = arboles.show = !real;
+    ciudadGroup.visible = !real;
   });
 
-  // ---------- Lugares y pines
-  const hotelLL = geo.hotel, uniLL = [-74.04145, 4.70208];
-  const places = [
-    {label: 'Hotel La Fontana', sub: 'ESTELAR', ll: hotelLL, up: 45, main: true},
-    {label: 'Unicentro', ll: uniLL, up: 30},
-    {label: 'Usaquén', ll: [-74.0307, 4.6949], up: 20},
-    {label: 'Parque de la 93', ll: [-74.0483, 4.6765], up: 20},
-    {label: 'Cerros Orientales', ll: [-74.0180, 4.7020], up: 300},
-  ];
-  const pinsEl = document.getElementById('pins');
-  places.forEach(p => {
-    p.pos = C.Cartesian3.fromDegrees(p.ll[0], p.ll[1], h + p.up);
-    p.el = document.createElement('div'); p.el.className = 'pin' + (p.main ? ' main' : '');
-    p.el.innerHTML = p.main ? `<span><b>${p.label}</b><em>${p.sub}</em></span><i></i>` : `<span>${p.label}</span><i></i>`;
-    pinsEl.appendChild(p.el);
-  });
-  const tmp = new C.Cartesian2(), occ = new C.EllipsoidalOccluder(C.Ellipsoid.WGS84, C.Cartesian3.ZERO);
-  scene.postRender.addEventListener(() => {
-    const cam = scene.camera.positionWC; occ.cameraPosition = cam;
-    places.forEach(p => {
-      const s = C.SceneTransforms.worldToWindowCoordinates(scene, p.pos, tmp);
-      const d = C.Cartesian3.distance(cam, p.pos);
-      const vis = s && occ.isPointVisible(p.pos) && d < (p.main ? 20000 : 9000) && d > 60;
-      p.el.style.opacity = vis ? 1 : 0;
-      if (s) { p.el.style.left = s.x + 'px'; p.el.style.top = s.y + 'px'; }
-    });
-    document.querySelector('#compass svg').style.transform = `rotate(${-C.Math.toDegrees(scene.camera.heading)}deg)`;
-  });
-
-  // Tarjetas: distancia real en línea recta desde el hotel
-  const geod = new C.EllipsoidGeodesic();
-  const dist = ll => { geod.setEndPoints(C.Cartographic.fromDegrees(...hotelLL), C.Cartographic.fromDegrees(...ll)); return geod.surfaceDistance; };
-  document.getElementById('cards').innerHTML = places.filter(p => !p.main && p.up < 100).map(p => {
-    const m = dist(p.ll); const v = m < 1000 ? [Math.round(m / 10) * 10, 'metros'] : [(m / 1000).toFixed(1).replace('.', ','), 'km'];
-    return `<div class="c"><small>${p.label}</small><div><b>${v[0]}</b><span>${v[1]}</span></div></div>`;
-  }).join('');
-
-  // ---------- Vistas de cámara
-  const at = (ll, up = 0) => C.Cartesian3.fromDegrees(ll[0], ll[1], h + up);
+  // 9. Vistas Predefinidas
   const views = [
-    {label: 'Ubicación', target: at([-74.0400, 4.6930]), heading: 345, pitch: -24, range: 5200},
-    {label: 'Master plan', target: at([geo.lon - 0.001, geo.lat + 0.001]), heading: 20, pitch: -55, range: 2300},
-    {label: 'Hotel La Fontana', target: at(hotelLL, 12), heading: 215, pitch: -30, range: 380},
-    {label: 'Fachada Calle 127', target: at(hotelLL, 10), heading: 180, pitch: -10, range: 170},
-    {label: 'Unicentro', target: at(uniLL, 8), heading: 330, pitch: -35, range: 650},
+    { label: 'Ubicación', pos: [-550, 850, 1400], target: [-246, 15, -291] },
+    { label: 'Master plan', pos: [-350, 520, 680], target: [-246, 15, -291] },
+    { label: 'Hotel La Fontana', pos: [-140, 65, -170], target: [-246, 20, -291] },
+    { label: 'Fachada Calle 127', pos: [-246, 22, -180], target: [-246, 18, -320] },
+    { label: 'Unicentro', pos: [220, 180, 260], target: [0, 15, 0] }
   ];
-  const menu = document.getElementById('menu');
-  function go(i, dur = 2.4) {
-    stopOrbit();
-    [...menu.children].forEach((b, k) => b.classList.toggle('on', k === i));
-    const v = views[i];
-    viewer.camera.flyToBoundingSphere(new C.BoundingSphere(v.target, 1), {duration: dur,
-      offset: new C.HeadingPitchRange(C.Math.toRadians(v.heading), C.Math.toRadians(v.pitch), v.range)});
-  }
-  views.forEach((v, i) => { const b = document.createElement('button'); b.textContent = v.label; b.onclick = () => go(i); menu.appendChild(b); });
 
-  // ---------- Órbita pivote
-  let orbiting = false, orbitFn = null;
+  let tweenCam = null;
+  function flyToView(v, duration = 2000) {
+    stopOrbit();
+    const startPos = camera.position.clone();
+    const startTgt = controls.target.clone();
+    const endPos = new THREE.Vector3(...v.pos);
+    const endTgt = new THREE.Vector3(...v.target);
+    const startTime = performance.now();
+
+    tweenCam = () => {
+      const now = performance.now();
+      const t = Math.min(1, (now - startTime) / duration);
+      // Ease in-out cubic
+      const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      camera.position.lerpVectors(startPos, endPos, ease);
+      controls.target.lerpVectors(startTgt, endTgt, ease);
+      if (t >= 1) tweenCam = null;
+    };
+  }
+
+  const menu = document.getElementById('menu');
+  views.forEach((v, i) => {
+    const b = document.createElement('button');
+    b.textContent = v.label;
+    b.onclick = () => {
+      [...menu.children].forEach((x, k) => x.classList.toggle('on', k === i));
+      flyToView(v);
+    };
+    menu.appendChild(b);
+  });
+  if (menu.children[2]) menu.children[2].classList.add('on');
+
+  // 10. Orbita Continua
+  let orbiting = false;
   function stopOrbit() {
-    if (!orbiting) return; orbiting = false; document.getElementById('orbit').classList.remove('on');
-    viewer.clock.onTick.removeEventListener(orbitFn); viewer.camera.lookAtTransform(C.Matrix4.IDENTITY);
+    if (!orbiting) return;
+    orbiting = false;
+    document.getElementById('orbit').classList.remove('on');
   }
-  function center() {
-    const c = new C.Cartesian2(viewer.canvas.clientWidth / 2, viewer.canvas.clientHeight / 2);
-    const p = scene.pickPositionSupported ? scene.pickPosition(c) : undefined;
-    return p && C.defined(p) ? p : at(hotelLL, 12);
+  function toggleOrbit() {
+    orbiting = !orbiting;
+    document.getElementById('orbit').classList.toggle('on', orbiting);
   }
-  function startOrbit() {
-    const cam = viewer.camera, tgt = center();
-    const range = Math.max(120, Math.min(6000, C.Cartesian3.distance(cam.positionWC, tgt)));
-    let hd = cam.heading; const pt = Math.min(-0.12, cam.pitch); let last = performance.now();
-    orbiting = true; document.getElementById('orbit').classList.add('on');
-    orbitFn = () => { const now = performance.now(); hd += (now - last) * 0.00005; last = now; cam.lookAt(tgt, new C.HeadingPitchRange(hd, pt, range)); };
-    viewer.clock.onTick.addEventListener(orbitFn);
-  }
-  document.getElementById('orbit').onclick = () => orbiting ? stopOrbit() : startOrbit();
-  ['pointerdown', 'wheel'].forEach(ev => viewer.canvas.addEventListener(ev, () => { stopOrbit(); document.getElementById('hint').style.opacity = 0; }, {passive: true}));
+  document.getElementById('orbit').onclick = toggleOrbit;
+  renderer.domElement.addEventListener('pointerdown', () => { stopOrbit(); document.getElementById('hint').style.opacity = 0; }, { passive: true });
+  renderer.domElement.addEventListener('wheel', () => { stopOrbit(); document.getElementById('hint').style.opacity = 0; }, { passive: true });
+
+  // Brujula
   document.getElementById('compass').onclick = () => {
-    const tgt = center(); const r = C.Cartesian3.distance(viewer.camera.positionWC, tgt);
-    viewer.camera.flyToBoundingSphere(new C.BoundingSphere(tgt, 1), {duration: 1, offset: new C.HeadingPitchRange(0, viewer.camera.pitch, r)});
+    const r = camera.position.distanceTo(controls.target);
+    flyToView({ pos: [controls.target.x, controls.target.y + r * 0.45, controls.target.z + r * 0.85], target: [controls.target.x, controls.target.y, controls.target.z] }, 1200);
   };
 
-  // Motor de iluminación dinámica día/noche y sol
-  let curHour = 10.5, isNight = false, baseInt = 3.2;
+  // 11. Motor de Iluminacion Dinamica Dia / Noche y Sol
+  let curHour = 10.5, isNight = false, baseInt = 2.8;
 
   function formatHora(hDec) {
     const hNorm = ((hDec % 24) + 24) % 24;
@@ -314,14 +404,8 @@
 
   function applyLuz(hDec, forceNight = null) {
     curHour = ((hDec % 24) + 24) % 24;
-    const autoNight = curHour < 5.75 || curHour > 18.15;
+    const autoNight = curHour < 5.75 || curHour > 18.25;
     isNight = forceNight !== null ? forceNight : autoNight;
-
-    const utc = (curHour + 5) % 24;
-    const uh = Math.floor(utc);
-    const um = Math.floor((utc % 1) * 60);
-    const iso = `2026-11-06T${String(uh).padStart(2,'0')}:${String(um).padStart(2,'0')}:00Z`;
-    viewer.clock.currentTime = C.JulianDate.fromIso8601(iso);
 
     const txt = formatHora(curHour);
     document.getElementById('txtHora').textContent = txt;
@@ -334,34 +418,41 @@
       b.classList.toggle('on', Math.abs(parseFloat(b.dataset.h) - curHour) < 0.5);
     });
 
+    // Angulo solar segun hora
+    const sunAngle = (curHour - 6.0) / 12.0 * Math.PI; // 0 en amanecer, PI en atardecer
+    const sunElev = Math.sin(sunAngle);
+    const sunAzim = -Math.cos(sunAngle);
+
     if (isNight) {
-      // Modo noche: iluminación lunar ambiental suave y cielo nocturno
-      scene.light = new C.DirectionalLight({
-        direction: new C.Cartesian3(-0.35, -0.55, -0.75),
-        color: new C.Color(0.60, 0.72, 0.98),
-        intensity: Math.max(0.9, baseInt * 0.45)
-      });
-      scene.skyAtmosphere.brightnessShift = -0.75;
-      scene.atmosphere.lightIntensity = 3.0;
-      scene.atmosphere.brightnessShift = -0.5;
-      scene.postProcessStages.exposure = 0.95;
-      scene.fog.density = 1.3e-4;
-      scene.fog.minimumBrightness = 0.15;
+      // Noche lunar: luz azulada suave y cielo oscuro
+      scene.background.set(0x0a101d);
+      scene.fog.color.set(0x0a101d);
+      hemiLight.color.set(0x2c4365);
+      hemiLight.groundColor.set(0x0a101a);
+      hemiLight.intensity = 0.5;
+
+      sunLight.color.set(0x7da4d4);
+      sunLight.position.set(-300, 600, -400);
+      sunLight.intensity = Math.max(0.4, baseInt * 0.25);
     } else {
-      // Modo día: sol directo con sombras calibradas
-      scene.light = new C.SunLight({ intensity: baseInt });
-      scene.skyAtmosphere.brightnessShift = 0.15;
-      scene.atmosphere.lightIntensity = 12.0;
-      scene.atmosphere.brightnessShift = 0.08;
-      scene.postProcessStages.exposure = 1.3;
-      scene.fog.density = 2.2e-4;
-      scene.fog.minimumBrightness = 0.6;
+      // Dia soleado: cielo claro y sol brillante
+      const skyCol = new THREE.Color(0xa4c2db).lerp(new THREE.Color(0xf6d6b2), Math.max(0, 1 - sunElev * 2));
+      scene.background.copy(skyCol);
+      scene.fog.color.copy(skyCol);
+
+      hemiLight.color.set(0xfff6ea);
+      hemiLight.groundColor.set(0x5b6572);
+      hemiLight.intensity = 1.1 + sunElev * 0.4;
+
+      const warmSun = new THREE.Color(0xfffaed).lerp(new THREE.Color(0xffaa55), Math.max(0, 1 - sunElev * 1.8));
+      sunLight.color.copy(warmSun);
+      sunLight.position.set(sunAzim * 800 + 150, Math.max(120, sunElev * 1000), 400);
+      sunLight.intensity = baseInt * Math.max(0.4, sunElev);
     }
   }
 
   document.getElementById('btnModoDia').onclick = () => applyLuz(10.5, false);
   document.getElementById('btnModoNoche').onclick = () => applyLuz(21.0, true);
-
   document.querySelectorAll('#panelLuz .horas button').forEach(b => {
     b.onclick = () => applyLuz(parseFloat(b.dataset.h));
   });
@@ -373,39 +464,123 @@
   slInt.oninput = () => {
     baseInt = parseFloat(slInt.value);
     document.getElementById('valInt').textContent = baseInt.toFixed(1);
-    if (!isNight) scene.light.intensity = baseInt;
-    else scene.light.intensity = Math.max(0.9, baseInt * 0.45);
+    applyLuz(curHour, isNight);
   };
 
   const btnShd = document.getElementById('btnShd');
   btnShd.onclick = () => {
-    viewer.shadows = !viewer.shadows;
-    btnShd.classList.toggle('on', viewer.shadows);
-    btnShd.textContent = viewer.shadows ? 'Activadas' : 'Desactivadas';
-    sunBtn.classList.toggle('on', viewer.shadows);
+    renderer.shadowMap.enabled = !renderer.shadowMap.enabled;
+    btnShd.classList.toggle('on', renderer.shadowMap.enabled);
+    btnShd.textContent = renderer.shadowMap.enabled ? 'Activadas' : 'Desactivadas';
   };
 
   const sunBtn = document.getElementById('sun');
-  sunBtn.classList.add('on');
-  sunBtn.title = 'Cambiar iluminación y hora del sol';
   sunBtn.onclick = () => {
     const p = document.getElementById('panelLuz');
     p.classList.toggle('on');
     sunBtn.classList.toggle('on', p.classList.contains('on'));
   };
-  if (Math.min(innerWidth, innerHeight) < 700) { viewer.shadows = false; btnShd.classList.remove('on'); btnShd.textContent = 'Desactivadas'; }
 
-  function warn(t) { const w = document.getElementById('warn'); w.textContent = t; w.style.display = 'block'; }
+  // 12. Pines Flotantes 3D
+  const hotelPos = new THREE.Vector3(-246, 25, -291);
+  const places = [
+    { label: 'Hotel La Fontana', sub: 'ESTELAR', pos: hotelPos, main: true },
+    { label: 'Unicentro', pos: new THREE.Vector3(0, 20, 0) },
+    { label: 'Usaquén', pos: new THREE.Vector3(1200, 20, -500) },
+    { label: 'Parque de la 93', pos: new THREE.Vector3(-600, 20, 2400) },
+    { label: 'Cerros Orientales', pos: new THREE.Vector3(2600, 280, 0) }
+  ];
 
-  // Inicializar iluminación diurna
+  const pinsEl = document.getElementById('pins');
+  places.forEach(p => {
+    p.el = document.createElement('div');
+    p.el.className = 'pin' + (p.main ? ' main' : '');
+    p.el.innerHTML = p.main
+      ? `<span><b>${p.label}</b><em>${p.sub}</em></span><i></i>`
+      : `<span>${p.label}</span><i></i>`;
+    pinsEl.appendChild(p.el);
+  });
+
+  const tempV = new THREE.Vector3();
+  function updatePins() {
+    places.forEach(p => {
+      tempV.copy(p.pos);
+      tempV.project(camera);
+      const isBehind = tempV.z > 1.0;
+      const x = (tempV.x * 0.5 + 0.5) * window.innerWidth;
+      const y = (-(tempV.y * 0.5) + 0.5) * window.innerHeight;
+      const dist = camera.position.distanceTo(p.pos);
+      const visible = !isBehind && dist < (p.main ? 18000 : 8000) && dist > 50;
+      p.el.style.opacity = visible ? 1 : 0;
+      if (visible) {
+        p.el.style.left = `${x}px`;
+        p.el.style.top = `${y}px`;
+      }
+    });
+
+    // Actualizar brujula
+    const dir = new THREE.Vector3();
+    camera.getWorldDirection(dir);
+    const angleDeg = Math.atan2(dir.x, -dir.z) * (180 / Math.PI);
+    document.querySelector('#compass svg').style.transform = `rotate(${angleDeg}deg)`;
+  }
+
+  // Tarjetas inferiores
+  document.getElementById('cards').innerHTML = `
+    <div class="c"><small>Unicentro</small><div><b>380</b><span>metros</span></div></div>
+    <div class="c"><small>Usaquén</small><div><b>1,8</b><span>km</span></div></div>
+    <div class="c"><small>Parque de la 93</small><div><b>3,2</b><span>km</span></div></div>
+  `;
+
+  // 13. Redimensionamiento
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    composer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  // 14. Bucle Principal de Renderizado
   applyLuz(10.5, false);
-
-  // Vista inicial y arranque
-  go(2, 0);
   step(100, 'Listo');
-  const L = document.getElementById('loader'); setTimeout(() => { L.style.opacity = 0; setTimeout(() => L.remove(), 800); }, 600);
-  setTimeout(startOrbit, 1500);
-  window.viewer = viewer;
+  const L = document.getElementById('loader');
+  setTimeout(() => {
+    L.style.opacity = 0;
+    setTimeout(() => L.remove(), 800);
+  }, 600);
+
+  let lastTime = performance.now();
+  function animate() {
+    requestAnimationFrame(animate);
+
+    const now = performance.now();
+    const dt = (now - lastTime) * 0.001;
+    lastTime = now;
+
+    if (tweenCam) tweenCam();
+
+    if (orbiting) {
+      controls.autoRotate = true;
+      controls.autoRotateSpeed = 0.6;
+    } else {
+      controls.autoRotate = false;
+    }
+
+    controls.update();
+
+    if (tiles) {
+      tiles.setCamera(camera);
+      tiles.setResolutionFromRenderer(camera, renderer);
+      tiles.update();
+    }
+
+    updatePins();
+
+    // Renderizado con pmndrs/postprocessing
+    composer.render(dt);
+  }
+
+  animate();
 })();
 </script>
 </body>
