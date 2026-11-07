@@ -2,38 +2,28 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Hotel La Fontana – Unicentro 360</title>
-<meta name="description" content="Visualizador 3D interactivo fotorrealista de Hotel La Fontana y Unicentro con nubes, iluminación PBR y postprocesamiento">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Hotel La Fontana 360 – Unicentro · Bogotá</title>
+<meta name="description" content="Recorrido 3D fotorrealista de Hotel La Fontana y Unicentro en Bogotá con Google 3D Tiles y nubes volumétricas">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/cesium@1.147.0/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/cesium@1.147.0/Build/Cesium/Cesium.js"></script>
 <script src="config.js"></script>
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://unpkg.com/three@0.168.0/build/three.module.js",
-    "three/addons/": "https://unpkg.com/three@0.168.0/examples/jsm/",
-    "3d-tiles-renderer": "https://unpkg.com/3d-tiles-renderer@0.5.4/build/index.js",
-    "3d-tiles-renderer/plugins": "https://unpkg.com/3d-tiles-renderer@0.5.4/build/index.plugins.js",
-    "postprocessing": "https://unpkg.com/postprocessing@6.36.0/build/index.js"
-  }
-}
-</script>
 <style>
   :root{
     --fondo:#060b12;
-    --panel:rgba(8,16,26,.75);
+    --panel:rgba(8,16,26,.78);
     --borde:rgba(125,211,252,.22);
     --texto:#e2f3ff;
     --suave:#94a3b8;
     --acento:#34d399;
     --cian:#7dd3fc;
-    --dorado:#fbbf24;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html,body{height:100%;width:100%;background:var(--fondo);color:var(--texto);font-family:Inter,system-ui,sans-serif;overflow:hidden;-webkit-user-select:none;user-select:none;touch-action:none}
-  #webgl-canvas{position:fixed;inset:0;width:100%;height:100%;display:block;outline:none;cursor:grab}
-  #webgl-canvas.arr{cursor:grabbing}
+  html,body{height:100%;width:100%;background:var(--fondo);color:var(--texto);font-family:Inter,system-ui,sans-serif;overflow:hidden;-webkit-user-select:none;user-select:none}
+  #map{position:fixed;inset:0}
+  .cesium-viewer-bottom{display:none}
 
   .vidrio{
     background:var(--panel);
@@ -44,29 +34,29 @@
     border-radius:12px;
   }
 
-  /* Marca superior izquierda */
-  #titulo{position:fixed;top:16px;left:16px;display:flex;gap:12px;align-items:center;padding:10px 16px;z-index:20}
+  /* Marca superior izquierda (estilo Kennedy 360) */
+  #titulo{position:fixed;top:16px;left:16px;display:flex;gap:12px;align-items:center;padding:10px 16px;z-index:10}
   #titulo b{display:block;font:600 15px "Playfair Display",serif;letter-spacing:.3px;color:#fff}
   #titulo small{display:block;font:600 9.5px Inter,sans-serif;letter-spacing:2.2px;color:var(--cian);text-transform:uppercase;margin-top:2px}
   #titulo svg{width:22px;height:22px;color:var(--acento);flex-shrink:0}
 
-  /* Indicador de grados y estado (estilo giro_render) */
-  #grados{position:fixed;top:16px;right:180px;padding:9px 14px;font:700 12.5px Inter,monospace;color:var(--cian);letter-spacing:1px;z-index:20}
+  /* Indicador de grados (estilo Kennedy 360) */
+  #grados{position:fixed;top:16px;right:180px;padding:9px 14px;font:700 12.5px Inter,monospace;color:var(--cian);letter-spacing:1px;z-index:10}
 
   /* Barra de herramientas superior derecha */
-  #tools{position:fixed;top:16px;right:16px;display:flex;gap:8px;align-items:center;z-index:20}
+  #tools{position:fixed;top:16px;right:16px;display:flex;gap:8px;align-items:center;z-index:10}
   #tools button{
     height:42px;min-width:42px;padding:0 12px;display:flex;align-items:center;gap:7px;justify-content:center;
     color:var(--texto);font:700 12px Inter,sans-serif;letter-spacing:1px;cursor:pointer;border:1px solid var(--borde);
     background:var(--panel);backdrop-filter:blur(14px);border-radius:10px;transition:all .18s;
   }
   #tools button:hover{background:rgba(20,32,48,.85);border-color:var(--cian)}
-  #tools button.on{background:rgba(52,211,153,.15);border-color:var(--acento);color:var(--acento);box-shadow:0 0 16px rgba(52,211,153,.3)}
+  #tools button.on{background:rgba(52,211,153,.18);border-color:var(--acento);color:var(--acento);box-shadow:0 0 16px rgba(52,211,153,.3)}
   #tools button svg{width:18px;height:18px}
 
-  /* Panel Interactivo de Iluminación y Sol */
+  /* Panel Interactivo de Iluminacion y Sol */
   #panelLuz{
-    position:fixed;top:68px;right:16px;width:320px;padding:18px 20px;z-index:25;
+    position:fixed;top:68px;right:16px;width:320px;padding:18px 20px;z-index:15;
     display:none;flex-direction:column;gap:14px;
   }
   #panelLuz.on{display:flex}
@@ -98,7 +88,7 @@
   #panelLuz .shd-row button.on{background:rgba(52,211,153,.2);border-color:var(--acento);color:var(--acento)}
 
   /* Menu lateral de Vistas */
-  #menu{position:fixed;left:16px;bottom:16px;width:185px;padding:6px;z-index:20;display:flex;flex-direction:column;gap:3px}
+  #menu{position:fixed;left:16px;bottom:16px;width:185px;padding:6px;z-index:10;display:flex;flex-direction:column;gap:3px}
   #menu button{
     display:flex;justify-content:space-between;align-items:center;width:100%;border:0;background:transparent;
     font:600 12px Inter,sans-serif;color:var(--suave);text-align:left;padding:9px 12px;border-radius:8px;cursor:pointer;transition:all .15s;
@@ -106,30 +96,30 @@
   #menu button:hover{background:rgba(255,255,255,.08);color:#fff}
   #menu button.on{background:rgba(52,211,153,.18);color:var(--acento)}
 
-  /* Tarjetas de Distancia (estilo DMCC) */
-  #cards{position:fixed;left:220px;bottom:20px;display:flex;gap:40px;color:#fff;text-shadow:0 2px 14px rgba(0,0,0,.7);pointer-events:none;z-index:20}
+  /* Tarjetas de Distancia (estilo DMCC / Kennedy 360) */
+  #cards{position:fixed;left:220px;bottom:20px;display:flex;gap:40px;color:#fff;text-shadow:0 2px 14px rgba(0,0,0,.7);pointer-events:none;z-index:10}
   #cards .c small{display:block;font:700 10.5px Inter,sans-serif;letter-spacing:1.4px;text-transform:uppercase;color:var(--cian);opacity:.95}
   #cards .c div{display:flex;align-items:baseline;gap:6px;margin-top:4px}
   #cards .c b{font:500 36px "Playfair Display",serif;line-height:1}
   #cards .c span{font:400 15px "Playfair Display",serif;line-height:1.05;color:var(--suave)}
 
   /* Pines 3D flotantes */
-  #marcas{position:fixed;inset:0;pointer-events:none;z-index:18;overflow:hidden}
-  .pin{position:absolute;transform:translate(-50%,-100%);transition:opacity .2s;pointer-events:auto}
+  #pins{position:fixed;inset:0;pointer-events:none;z-index:9;overflow:hidden}
+  .pin{position:fixed;transform:translate(-50%,-100%);transition:opacity .25s;pointer-events:auto}
   .pin .et{
     display:flex;align-items:center;gap:7px;padding:6px 11px;font-size:11.5px;font-weight:700;
-    white-space:nowrap;border-radius:8px;background:rgba(8,16,26,.82);border:1px solid var(--borde);
+    white-space:nowrap;border-radius:8px;background:rgba(8,16,26,.85);border:1px solid var(--borde);
     backdrop-filter:blur(8px);color:#fff;box-shadow:0 6px 20px rgba(0,0,0,.4);cursor:pointer;
   }
   .pin .et i{width:7px;height:7px;border-radius:50%;background:var(--acento);box-shadow:0 0 0 3px rgba(52,211,153,.3)}
   .pin.main .et{background:linear-gradient(135deg,rgba(52,211,153,.95),rgba(125,211,252,.95));color:#052418;border-color:transparent;font-size:13px;padding:8px 14px}
   .pin.main .et i{background:#052418;box-shadow:none}
-  .pin .palo{width:1.5px;height:24px;margin:0 auto;background:linear-gradient(rgba(255,255,255,.8),rgba(255,255,255,0))}
+  .pin .palo{width:1.5px;height:24px;margin:0 auto;background:linear-gradient(rgba(255,255,255,.85),rgba(255,255,255,0))}
 
-  /* Ficha informativa al hacer clic en un pin */
+  /* Ficha de Información al tocar un pin */
   #ficha{
     position:fixed;bottom:24px;right:24px;width:min(340px,calc(100vw - 48px));padding:18px 20px;
-    z-index:30;display:none;flex-direction:column;gap:8px;
+    z-index:25;display:none;flex-direction:column;gap:8px;
   }
   #ficha.on{display:flex}
   #ficha b{font-size:16px;color:#fff}
@@ -137,7 +127,7 @@
   #ficha .cerrar{align-self:flex-end;border:0;background:transparent;color:var(--cian);font:600 11px Inter;cursor:pointer;padding:4px}
 
   /* Indicador de ayuda y avisos */
-  #hint{position:fixed;top:70px;left:50%;transform:translateX(-50%);font-size:11.5px;color:#fff;background:rgba(0,0,0,.65);padding:7px 18px;border-radius:20px;transition:opacity .6s;z-index:20;white-space:nowrap;pointer-events:none}
+  #hint{position:fixed;top:70px;left:50%;transform:translateX(-50%);font-size:11.5px;color:#fff;background:rgba(0,0,0,.65);padding:7px 18px;border-radius:20px;transition:opacity .6s;z-index:10;white-space:nowrap;pointer-events:none}
   #warn{position:fixed;top:78px;left:16px;max-width:min(380px,calc(100% - 32px));font-size:12px;padding:9px 12px;color:#5a3b00;background:#fff3d6;display:none;z-index:25;box-shadow:0 6px 20px rgba(0,0,0,.2);border-radius:6px}
 
   /* Pantalla de Carga */
@@ -161,8 +151,8 @@
 </style>
 </head>
 <body>
-<canvas id="webgl-canvas"></canvas>
-<div id="marcas"></div>
+<div id="map"></div>
+<div id="pins"></div>
 
 <div id="titulo" class="vidrio">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -175,7 +165,7 @@
 
 <div id="tools">
   <button id="compass" title="Alinear al Norte"><svg viewBox="0 0 40 40"><path d="M20 4l5.5 16h-11z" fill="#e9564a"/><path d="M20 36l-5.5-16h11z" fill="currentColor"/></svg></button>
-  <button id="girar" title="Pivotear alrededor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg><span>GIRAR</span></button>
+  <button id="girar" class="on" title="Pivotear alrededor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg><span>GIRAR</span></button>
   <button id="sun" title="Iluminación y Sol"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
 </div>
 
@@ -198,8 +188,8 @@
     <input type="range" id="slHora" min="0.0" max="23.75" step="0.25" value="10.5">
   </div>
   <div class="fil">
-    <label><span>Intensidad de luz</span><b id="valInt">2.8</b></label>
-    <input type="range" id="slInt" min="0.2" max="5.0" step="0.1" value="2.8">
+    <label><span>Intensidad de luz</span><b id="valInt">3.2</b></label>
+    <input type="range" id="slInt" min="0.2" max="6.0" step="0.1" value="3.2">
   </div>
   <div class="shd-row">
     <span>Sombras proyectadas</span>
@@ -207,7 +197,7 @@
   </div>
 </div>
 
-<div id="hint">Arrastra para pivotear • rueda para acercar • clic derecho para encuadrar</div>
+<div id="hint">Arrastra de lado para girar • clic derecho o Ctrl + arrastrar para pivotear • rueda para acercar</div>
 <div id="warn"></div>
 <nav id="menu" class="vidrio"></nav>
 <div id="cards"></div>
@@ -218,17 +208,11 @@
   <button class="cerrar" id="fCerrar">CERRAR</button>
 </div>
 
-<div id="carga"><div class="t"><h1>Hotel La Fontana <span>360</span></h1><p>Visualizador 3D Ultra Realista · Unicentro</p><div class="barra"><i id="barra"></i></div><small id="cargaTxt">Iniciando escena 3D</small></div></div>
+<div id="carga"><div class="t"><h1>Hotel La Fontana <span>360</span></h1><p>Recorrido 3D Fotorrealista · Unicentro · Bogotá</p><div class="barra"><i id="barra"></i></div><small id="cargaTxt">Cargando ciudad fotorrealista</small></div></div>
 
-<script type="module">
-import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { TilesRenderer } from '3d-tiles-renderer';
-import { GoogleCloudAuthPlugin, ReorientationPlugin } from '3d-tiles-renderer/plugins';
-import * as POST from 'postprocessing';
-
+<script>
 (async () => {
+  const C = Cesium, cfg = window.TLF_CONFIG || {};
   const step = (p, t) => {
     const f = document.getElementById('barra'); if (f) f.style.width = p + '%';
     const pc = document.getElementById('cargaTxt'); if (pc) pc.textContent = t;
@@ -236,300 +220,244 @@ import * as POST from 'postprocessing';
   const warn = (t) => { const w = document.getElementById('warn'); w.textContent = t; w.style.display = 'block'; };
 
   const geo = await (await fetch('geo.json')).json();
-  const cfg = window.TLF_CONFIG || {};
+  const google = !!(cfg.googleMapsKey || cfg.cesiumIonToken);
+  if (cfg.cesiumIonToken) C.Ion.defaultAccessToken = cfg.cesiumIonToken;
 
-  // 1. Escena y Camara Three.js
-  const canvas = document.getElementById('webgl-canvas');
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x8eb3d4);
-  scene.fog = new THREE.FogExp2(0x8eb3d4, 0.00012);
-
-  const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 65000);
-  camera.position.set(-246, 190, 420); // Vista cinematografica inicial sobre Hotel La Fontana
-
-  // 2. Renderer con High-Performance y PCFSoftShadowMap
-  const renderer = new THREE.WebGLRenderer({
-    canvas,
-    powerPreference: 'high-performance',
-    antialias: false,
-    stencil: false,
-    depth: true
-  });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
-  // 3. Postprocesamiento con pmndrs/postprocessing (ACES Filmic + Bloom + SMAA + Vignette)
-  const composer = new POST.EffectComposer(renderer);
-  composer.addPass(new POST.RenderPass(scene, camera));
-
-  const bloomEffect = new POST.BloomEffect({
-    intensity: 0.38,
-    luminanceThreshold: 0.82,
-    luminanceSmoothing: 0.28,
-    mipmapBlur: true
+  // 1. Visor CesiumJS con Iluminacion HDR y Atmosfera Real
+  const viewer = new C.Viewer('map', {
+    animation: false, timeline: false, baseLayerPicker: false, geocoder: false, homeButton: false, sceneModePicker: false,
+    navigationHelpButton: false, fullscreenButton: false, infoBox: false, selectionIndicator: false,
+    baseLayer: new C.ImageryLayer(new C.OpenStreetMapImageryProvider({url: 'https://tile.openstreetmap.org/', maximumLevel: 19})),
+    msaaSamples: 4, shadows: true, terrainShadows: C.ShadowMode.RECEIVE_ONLY,
   });
 
-  const toneMappingEffect = new POST.ToneMappingEffect({
-    mode: POST.ToneMappingMode.ACES_FILMIC,
-    resolution: 256,
-    whitePoint: 4.0,
-    middleGrey: 0.6
-  });
+  const scene = viewer.scene;
+  scene.globe.show = true;
+  scene.highDynamicRange = true;
+  scene.postProcessStages.tonemapper = C.Tonemapper.PBR_NEUTRAL;
+  scene.postProcessStages.exposure = 1.35;
+  scene.postProcessStages.fxaa.enabled = true;
 
-  const vignetteEffect = new POST.VignetteEffect({
-    offset: 0.32,
-    darkness: 0.38
-  });
+  // Atmosfera clara y cerros orientales fotorrealistas (como Kennedy 360)
+  scene.skyAtmosphere.show = true;
+  scene.skyAtmosphere.hueShift = -0.02;
+  scene.skyAtmosphere.saturationShift = -0.22;
+  scene.skyAtmosphere.brightnessShift = 0.16;
+  scene.atmosphere.lightIntensity = 12.0;
+  scene.atmosphere.brightnessShift = 0.08;
+  scene.fog.enabled = true;
+  scene.fog.density = 2.0e-4;
+  scene.fog.minimumBrightness = 0.62;
+  scene.light = new C.SunLight({intensity: 3.2});
+  viewer.clock.currentTime = C.JulianDate.fromIso8601('2026-11-06T15:30:00Z'); // 10:30 AM Bogota
+  viewer.clock.shouldAnimate = true; viewer.clock.multiplier = 0;
 
-  const smaaEffect = new POST.SMAAEffect();
+  const sm = viewer.shadowMap;
+  sm.size = 4096;
+  sm.softShadows = true;
+  sm.darkness = 0.35;
+  sm.maximumDistance = 2800;
 
-  const effectPass = new POST.EffectPass(camera, bloomEffect, toneMappingEffect, vignetteEffect, smaaEffect);
-  composer.addPass(effectPass);
+  const ctl = scene.screenSpaceCameraController;
+  ctl.minimumZoomDistance = 10;
+  ctl.maximumZoomDistance = 15000;
+  ctl.enableCollisionDetection = true;
 
-  // 4. Luces Arquitectonicas Calibradas
-  const hemiLight = new THREE.HemisphereLight(0xfff8ee, 0x556070, 1.35);
-  scene.add(hemiLight);
+  // 2. Georreferenciacion EPSG:9377 -> Elipsoide WGS84 (+0.6m para acople perfecto)
+  const h = (google ? geo.h : 0) + 0.6;
+  const M = C.Transforms.eastNorthUpToFixedFrame(C.Cartesian3.fromDegrees(geo.lon, geo.lat, h));
+  C.Matrix4.multiply(M, C.Matrix4.fromRotationTranslation(C.Matrix3.fromRotationZ(C.Math.toRadians(geo.rot_deg))), M);
+  C.Matrix4.multiplyByUniformScale(M, geo.scale, M);
 
-  const sunLight = new THREE.DirectionalLight(0xfffaec, 2.8);
-  sunLight.position.set(400, 800, 320);
-  sunLight.castShadow = true;
-  sunLight.shadow.mapSize.width = 4096;
-  sunLight.shadow.mapSize.height = 4096;
-  sunLight.shadow.camera.near = 50;
-  sunLight.shadow.camera.far = 3800;
-  sunLight.shadow.bias = -0.0001;
-  const d = 1100;
-  sunLight.shadow.camera.left = -d;
-  sunLight.shadow.camera.right = d;
-  sunLight.shadow.camera.top = d;
-  sunLight.shadow.camera.bottom = -d;
-  scene.add(sunLight);
-
-  // 5. Nubes Procedurales y Boveda Celeste (Cielo con nubes en movimiento)
-  const skyRadius = 24000;
-  const skyGeo = new THREE.SphereGeometry(skyRadius, 32, 16);
-  const skyMat = new THREE.MeshBasicMaterial({
-    color: 0x8eb3d4,
-    side: THREE.BackSide,
-    depthWrite: false
-  });
-  const skyMesh = new THREE.Mesh(skyGeo, skyMat);
-  scene.add(skyMesh);
-
-  // Capa de Nubes flotantes con textura FBM y deriva de viento
-  const texLoader = new THREE.TextureLoader();
-  let cloudMesh = null;
-  texLoader.load('modelo/nubes.webp', (cloudTex) => {
-    cloudTex.wrapS = THREE.RepeatWrapping;
-    cloudTex.wrapT = THREE.RepeatWrapping;
-    cloudTex.repeat.set(6, 6);
-
-    const cloudGeo = new THREE.PlaneGeometry(36000, 36000);
-    const cloudMat = new THREE.MeshBasicMaterial({
-      map: cloudTex,
-      transparent: true,
-      opacity: 0.78,
-      depthWrite: false
-    });
-    cloudMesh = new THREE.Mesh(cloudGeo, cloudMat);
-    cloudMesh.rotation.x = -Math.PI / 2;
-    cloudMesh.position.y = 1350; // Altitud de las nubes sobre Bogota
-    scene.add(cloudMesh);
-  });
-
-  // 6. NASA-AMMOS/3DTilesRendererJS (Google Photorealistic 3D Tiles)
-  step(25, 'Cargando entorno 3D de Bogotá');
+  // 3. Google Photorealistic 3D Tiles (SIN POLIGONO DE CORTE PARA EVITAR CUALQUIER HUECO NEGRO)
+  step(25, 'Ciudad Fotorrealista de Google');
   let tiles = null;
-  if (cfg.googleMapsKey) {
+  if (google) {
     try {
-      tiles = new TilesRenderer('https://tile.googleapis.com/v1/3dtiles/root.json');
-      tiles.registerPlugin(new GoogleCloudAuthPlugin({ apiToken: cfg.googleMapsKey }));
-      tiles.registerPlugin(new ReorientationPlugin({
-        up: '+y',
-        lat: geo.lat,
-        lon: geo.lon,
-        height: geo.h,
-        recenter: true
-      }));
-      scene.add(tiles.group);
-    } catch(e) {
+      tiles = cfg.googleMapsKey
+        ? await C.createGooglePhotorealistic3DTileset({key: cfg.googleMapsKey}, {maximumScreenSpaceError: 6})
+        : await C.createGooglePhotorealistic3DTileset(undefined, {maximumScreenSpaceError: 6});
+      tiles.shadows = C.ShadowMode.RECEIVE_ONLY;
+      scene.primitives.add(tiles);
+    } catch (e) {
       console.error(e);
       warn('No se pudo conectar con Google 3D Tiles.');
     }
   }
 
-  // 7. Carga de Edificios, Vías, Andenes y Árboles Botánicos 3D
-  step(50, 'Cargando arquitectura PBR');
-  const gltfLoader = new GLTFLoader();
+  // 4. Carga de Edificios PBR y Árboles Botánicos 3D
+  step(50, 'Edificios, Vías y Árboles 3D');
+  const load = (url, p, t) => C.Model.fromGltfAsync({url, modelMatrix: M, shadows: C.ShadowMode.ENABLED})
+    .then(m => { scene.primitives.add(m); step(p, t); return m; });
 
-  const loadGLTF = (url, p, txt) => new Promise((resolve, reject) => {
-    gltfLoader.load(url, (gltf) => {
-      step(p, txt);
-      resolve(gltf.scene);
-    }, undefined, reject);
-  });
+  const [ciudad, arboles] = await Promise.all([
+    load('modelo/ciudad.glb', 80, 'Árboles botánicos 3D'),
+    load('modelo/arboles.glb', 92, 'Generando nubes y cielo')
+  ]);
+  arboles.shadows = C.ShadowMode.ENABLED;
 
-  const cityGroup = new THREE.Group();
-  scene.add(cityGroup);
-
+  // 5. Nubes Volumétricas sobre la Sabana de Bogotá (Cumulus Clouds nativas)
   try {
-    const [ciudad, arboles] = await Promise.all([
-      loadGLTF('modelo/ciudad.glb', 80, 'Cargando árboles botánicos 3D'),
-      loadGLTF('modelo/arboles.glb', 92, 'Calibrando escena 360')
-    ]);
+    const clouds = scene.primitives.add(new C.CloudCollection());
+    clouds.noiseDetail = 16.0;
+    for (let i = 0; i < 14; i++) {
+      const cx = geo.lon + (Math.random() - 0.5) * 0.12;
+      const cy = geo.lat + (Math.random() - 0.5) * 0.12;
+      const ch = h + 1300 + Math.random() * 500;
+      clouds.add({
+        position: C.Cartesian3.fromDegrees(cx, cy, ch),
+        scale: new C.Cartesian2(1400 + Math.random() * 1200, 480 + Math.random() * 320),
+        maximumSize: new C.Cartesian3(45, 15, 12),
+        slice: 0.35
+      });
+    }
+  } catch(e) { console.warn('CloudCollection:', e); }
 
-    ciudad.position.set(0, 0.6, 0);
-    ciudad.traverse(ch => {
-      if (ch.isMesh) {
-        ch.castShadow = true;
-        ch.receiveShadow = true;
-      }
-    });
-    cityGroup.add(ciudad);
-
-    arboles.position.set(0, 0.6, 0);
-    arboles.traverse(ch => {
-      if (ch.isMesh) {
-        ch.castShadow = true;
-        ch.receiveShadow = true;
-      }
-    });
-    cityGroup.add(arboles);
-  } catch(e) {
-    console.error('Error cargando modelos:', e);
-  }
-
-  // 8. Controles de Cámara (Pivoteo Suave estilo giro_render)
-  const controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
-  controls.dampingFactor = 0.05;
-  controls.minDistance = 25;
-  controls.maxDistance = 12000;
-  controls.maxPolarAngle = Math.PI / 2 - 0.03;
-  controls.target.set(-246, 16, -291); // Foco de pivote en Hotel La Fontana
-
-  let autoRotate = true;
-  const btnGirar = document.getElementById('girar');
-  btnGirar.classList.add('on');
-  btnGirar.onclick = () => {
-    autoRotate = !autoRotate;
-    btnGirar.classList.toggle('on', autoRotate);
-  };
-
-  renderer.domElement.addEventListener('pointerdown', () => {
-    document.getElementById('webgl-canvas').classList.add('arr');
-    document.getElementById('hint').style.opacity = 0;
-  }, { passive: true });
-  window.addEventListener('pointerup', () => {
-    document.getElementById('webgl-canvas').classList.remove('arr');
-  });
-
-  // 9. Vistas Predefinidas del Territorio
-  const views = [
-    { label: 'Hotel La Fontana', pos: [-246, 120, -120], tgt: [-246, 16, -291] },
-    { label: 'Ubicación General', pos: [-550, 750, 1300], tgt: [-246, 16, -291] },
-    { label: 'Master Plan', pos: [-340, 480, 580], tgt: [-246, 16, -291] },
-    { label: 'Fachada Calle 127', pos: [-246, 24, -180], tgt: [-246, 18, -320] },
-    { label: 'Unicentro', pos: [220, 190, 280], tgt: [0, 15, 0] }
-  ];
-
-  let tween = null;
-  function volarA(v, dur = 2000) {
-    const sP = camera.position.clone(), sT = controls.target.clone();
-    const eP = new THREE.Vector3(...v.pos), eT = new THREE.Vector3(...v.tgt);
-    const t0 = performance.now();
-    tween = () => {
-      const u = Math.min(1, (performance.now() - t0) / dur);
-      const ease = u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
-      camera.position.lerpVectors(sP, eP, ease);
-      controls.target.lerpVectors(sT, eT, ease);
-      if (u >= 1) tween = null;
-    };
-  }
-
-  const menu = document.getElementById('menu');
-  views.forEach((v, i) => {
-    const b = document.createElement('button');
-    b.textContent = v.label;
-    b.onclick = () => {
-      [...menu.children].forEach((x, k) => x.classList.toggle('on', k === i));
-      volarA(v);
-    };
-    menu.appendChild(b);
-  });
-  if (menu.children[0]) menu.children[0].classList.add('on');
-
-  // Brujula
-  document.getElementById('compass').onclick = () => {
-    const r = camera.position.distanceTo(controls.target);
-    volarA({ pos: [controls.target.x, controls.target.y + r * 0.45, controls.target.z + r * 0.85], tgt: [controls.target.x, controls.target.y, controls.target.z] }, 1000);
-  };
-
-  // 10. Pines Interactivos 3D
+  // 6. Lugares y Pines 3D Interactivos (Estilo Kennedy 360)
+  const hotelLL = geo.hotel, uniLL = [-74.04145, 4.70208];
   const PUNTOS = [
-    { n: 'Hotel La Fontana', sub: 'ESTELAR', pos: new THREE.Vector3(-246, 28, -291), main: true, d: 'Complejo hotelero de 5 estrellas con arquitectura de patios coloniales, ladrillo tolete y jardines protegidos.' },
-    { n: 'Unicentro', sub: 'BOGOTÁ', pos: new THREE.Vector3(0, 24, 0), d: 'Centro comercial emblemático de Usaquén inaugurado en 1976, principal nodo de compras y servicios del norte.' },
-    { n: 'Usaquén', pos: new THREE.Vector3(1200, 24, -500), d: 'Pueblo histórico y distrito gastronómico tradicional al pie de los cerros orientales.' },
-    { n: 'Parque de la 93', pos: new THREE.Vector3(-600, 24, 2400), d: 'Polo gastronómico y corporativo del norte de Bogotá.' },
-    { n: 'Cerros Orientales', pos: new THREE.Vector3(2600, 280, 0), d: 'Reserva forestal y cordillera andina que abraza la sabana de Bogotá.' }
+    { n: 'Hotel La Fontana', sub: 'ESTELAR', ll: hotelLL, up: 45, main: true, d: 'Complejo hotelero 5 estrellas con arquitectura de patios coloniales, jardines interiores y ubicación privilegiada frente a Unicentro.' },
+    { n: 'Unicentro', sub: 'BOGOTÁ', ll: uniLL, up: 32, d: 'Centro comercial pionero de Colombia fundado en 1976 sobre la Calle 127 y Carrera 15, epicentro comercial del norte.' },
+    { n: 'Usaquén', ll: [-74.0307, 4.6949], up: 22, d: 'Casco histórico tradicional, plaza principal y zona gastronómica reconocida al pie de los cerros orientales.' },
+    { n: 'Parque de la 93', ll: [-74.0483, 4.6765], up: 22, d: 'Parque metropolitano y nodo urbano de comercio, gastronomía y vida corporativa.' },
+    { n: 'Cerros Orientales', ll: [-74.0180, 4.7020], up: 320, d: 'Reserva forestal y cadena montañosa de los Andes que custodia a Bogotá.' },
   ];
 
-  const marcasEl = document.getElementById('marcas');
-  const pins = PUNTOS.map(p => {
-    const d = document.createElement('div');
-    d.className = 'pin' + (p.main ? ' main' : '');
-    d.innerHTML = `<div class="et"><i></i><span>${p.n}</span></div><div class="palo"></div>`;
-    d.onclick = () => {
+  const pinsEl = document.getElementById('pins');
+  PUNTOS.forEach(p => {
+    p.pos = C.Cartesian3.fromDegrees(p.ll[0], p.ll[1], h + p.up);
+    p.el = document.createElement('div');
+    p.el.className = 'pin' + (p.main ? ' main' : '');
+    p.el.innerHTML = `<div class="et"><i></i><span>${p.n}</span></div><div class="palo"></div>`;
+    p.el.onclick = () => {
       document.getElementById('fTit').textContent = p.n;
       document.getElementById('fTxt').textContent = p.d;
       document.getElementById('ficha').classList.add('on');
-      controls.target.copy(p.pos);
     };
-    marcasEl.appendChild(d);
-    return { el: d, pos: p.pos, main: p.main };
+    pinsEl.appendChild(p.el);
   });
 
   document.getElementById('fCerrar').onclick = () => document.getElementById('ficha').classList.remove('on');
 
-  const tmpV = new THREE.Vector3();
-  function actualizarMarcas() {
-    pins.forEach(p => {
-      tmpV.copy(p.pos);
-      tmpV.project(camera);
-      const detras = tmpV.z > 1.0;
-      const x = (tmpV.x * 0.5 + 0.5) * window.innerWidth;
-      const y = (-(tmpV.y * 0.5) + 0.5) * window.innerHeight;
-      const dist = camera.position.distanceTo(p.pos);
-      const vis = !detras && dist < (p.main ? 18000 : 7000) && dist > 40;
+  const tmp = new C.Cartesian2(), occ = new C.EllipsoidalOccluder(C.Ellipsoid.WGS84, C.Cartesian3.ZERO);
+  scene.postRender.addEventListener(() => {
+    const cam = scene.camera.positionWC; occ.cameraPosition = cam;
+    PUNTOS.forEach(p => {
+      const s = C.SceneTransforms.worldToWindowCoordinates(scene, p.pos, tmp);
+      const d = C.Cartesian3.distance(cam, p.pos);
+      const vis = s && occ.isPointVisible(p.pos) && d < (p.main ? 22000 : 9500) && d > 50;
       p.el.style.opacity = vis ? 1 : 0;
-      if (vis) {
-        p.el.style.left = x + 'px';
-        p.el.style.top = y + 'px';
-      }
+      if (s) { p.el.style.left = s.x + 'px'; p.el.style.top = s.y + 'px'; }
     });
 
-    // Indicador de grados azimutales (como giro_render)
-    const azim = (controls.getAzimuthalAngle() * 180 / Math.PI + 360) % 360;
-    document.getElementById('grados').textContent = Math.round(azim) + '°';
+    // Indicador de grados azimutales
+    const azim = (Math.round(-C.Math.toDegrees(scene.camera.heading)) % 360 + 360) % 360;
+    document.getElementById('grados').textContent = azim + '°';
 
-    // Rotacion de la aguja de la brujula
-    const camDir = new THREE.Vector3();
-    camera.getWorldDirection(camDir);
-    const compassDeg = Math.atan2(camDir.x, -camDir.z) * (180 / Math.PI);
-    document.querySelector('#compass svg').style.transform = `rotate(${compassDeg}deg)`;
+    // Aguja de la brujula
+    document.querySelector('#compass svg').style.transform = `rotate(${-C.Math.toDegrees(scene.camera.heading)}deg)`;
+  });
+
+  // Tarjetas inferiores: distancia real en linea recta
+  const geod = new C.EllipsoidGeodesic();
+  const dist = ll => { geod.setEndPoints(C.Cartographic.fromDegrees(...hotelLL), C.Cartographic.fromDegrees(...ll)); return geod.surfaceDistance; };
+  document.getElementById('cards').innerHTML = PUNTOS.filter(p => !p.main && p.up < 100).map(p => {
+    const m = dist(p.ll); const v = m < 1000 ? [Math.round(m / 10) * 10, 'metros'] : [(m / 1000).toFixed(1).replace('.', ','), 'km'];
+    return `<div class="c"><small>${p.n}</small><div><b>${v[0]}</b><span>${v[1]}</span></div></div>`;
+  }).join('');
+
+  // 7. Vistas del Territorio
+  const at = (ll, up = 0) => C.Cartesian3.fromDegrees(ll[0], ll[1], h + up);
+  const views = [
+    {label: 'Hotel La Fontana', target: at(hotelLL, 14), heading: 215, pitch: -28, range: 420},
+    {label: 'Ubicación General', target: at([-74.0400, 4.6930]), heading: 345, pitch: -24, range: 5200},
+    {label: 'Master Plan', target: at([geo.lon - 0.001, geo.lat + 0.001]), heading: 20, pitch: -52, range: 2400},
+    {label: 'Fachada Calle 127', target: at(hotelLL, 12), heading: 180, pitch: -12, range: 210},
+    {label: 'Unicentro', target: at(uniLL, 10), heading: 330, pitch: -35, range: 720},
+  ];
+
+  const menu = document.getElementById('menu');
+  function go(i, dur = 2.4) {
+    stopOrbit();
+    [...menu.children].forEach((b, k) => b.classList.toggle('on', k === i));
+    const v = views[i];
+    viewer.camera.flyTo({
+      destination: C.Cartesian3.fromDegrees(
+        v.target ? C.Cartographic.fromCartesian(v.target).longitude * (180/Math.PI) : geo.lon,
+        v.target ? C.Cartographic.fromCartesian(v.target).latitude * (180/Math.PI) : geo.lat,
+        h + (v.range || 500) * Math.sin(Math.abs(v.pitch || 30) * Math.PI / 180)
+      ),
+      orientation: {
+        heading: C.Math.toRadians(v.heading),
+        pitch: C.Math.toRadians(v.pitch),
+        roll: 0.0
+      },
+      duration: dur
+    });
   }
 
-  // Tarjetas de distancia
-  document.getElementById('cards').innerHTML = `
-    <div class="c"><small>Unicentro</small><div><b>380</b><span>metros</span></div></div>
-    <div class="c"><small>Usaquén</small><div><b>1,8</b><span>km</span></div></div>
-    <div class="c"><small>Parque de la 93</small><div><b>3,2</b><span>km</span></div></div>
-  `;
+  views.forEach((v, i) => {
+    const b = document.createElement('button');
+    b.textContent = v.label;
+    b.onclick = () => go(i);
+    menu.appendChild(b);
+  });
 
-  // 11. Motor de Iluminación Dinámica Día / Noche y Sol
-  let curHour = 10.5, isNight = false, baseInt = 2.8;
+  // 8. Modo Giro / Orbita Continua (Estilo GIRAR en Kennedy 360)
+  let orbiting = false, orbitFn = null;
+  function stopOrbit() {
+    if (!orbiting) return;
+    orbiting = false;
+    document.getElementById('girar').classList.remove('on');
+    viewer.clock.onTick.removeEventListener(orbitFn);
+    viewer.camera.lookAtTransform(C.Matrix4.IDENTITY);
+  }
+
+  function center() {
+    const c = new C.Cartesian2(viewer.canvas.clientWidth / 2, viewer.canvas.clientHeight / 2);
+    const p = scene.pickPositionSupported ? scene.pickPosition(c) : undefined;
+    return p && C.defined(p) ? p : at(hotelLL, 14);
+  }
+
+  function startOrbit() {
+    const cam = viewer.camera, tgt = center();
+    const range = Math.max(140, Math.min(6500, C.Cartesian3.distance(cam.positionWC, tgt)));
+    let hd = cam.heading;
+    const pt = Math.min(-0.14, cam.pitch);
+    let last = performance.now();
+    orbiting = true;
+    document.getElementById('girar').classList.add('on');
+    orbitFn = () => {
+      const now = performance.now();
+      hd += (now - last) * 0.00006;
+      last = now;
+      cam.lookAt(tgt, new C.HeadingPitchRange(hd, pt, range));
+    };
+    viewer.clock.onTick.addEventListener(orbitFn);
+  }
+
+  document.getElementById('girar').onclick = () => orbiting ? stopOrbit() : startOrbit();
+  ['pointerdown', 'wheel'].forEach(ev => viewer.canvas.addEventListener(ev, () => {
+    stopOrbit();
+    document.getElementById('hint').style.opacity = 0;
+  }, {passive: true}));
+
+  document.getElementById('compass').onclick = () => {
+    const tgt = center();
+    const r = C.Cartesian3.distance(viewer.camera.positionWC, tgt);
+    viewer.camera.flyTo({
+      destination: C.Cartesian3.fromDegrees(
+        C.Cartographic.fromCartesian(tgt).longitude * (180/Math.PI),
+        C.Cartographic.fromCartesian(tgt).latitude * (180/Math.PI) - (r * 0.000008),
+        C.Cartographic.fromCartesian(tgt).height + r * 0.6
+      ),
+      orientation: { heading: 0.0, pitch: C.Math.toRadians(-35), roll: 0.0 },
+      duration: 1.2
+    });
+  };
+
+  // 9. Motor Dinamico de Iluminacion Dia / Noche y Sol
+  let curHour = 10.5, isNight = false, baseInt = 3.2;
 
   function formatHora(hDec) {
     const hNorm = ((hDec % 24) + 24) % 24;
@@ -545,6 +473,12 @@ import * as POST from 'postprocessing';
     const autoNight = curHour < 5.75 || curHour > 18.25;
     isNight = forceNight !== null ? forceNight : autoNight;
 
+    const utc = (curHour + 5) % 24;
+    const uh = Math.floor(utc);
+    const um = Math.floor((utc % 1) * 60);
+    const iso = `2026-11-06T${String(uh).padStart(2,'0')}:${String(um).padStart(2,'0')}:00Z`;
+    viewer.clock.currentTime = C.JulianDate.fromIso8601(iso);
+
     const txt = formatHora(curHour);
     document.getElementById('txtHora').textContent = txt;
     document.getElementById('valHora').textContent = txt;
@@ -556,38 +490,26 @@ import * as POST from 'postprocessing';
       b.classList.toggle('on', Math.abs(parseFloat(b.dataset.h) - curHour) < 0.5);
     });
 
-    const sunAngle = (curHour - 6.0) / 12.0 * Math.PI;
-    const sunElev = Math.sin(sunAngle);
-    const sunAzim = -Math.cos(sunAngle);
-
     if (isNight) {
-      // Cielo nocturno y luz lunar
-      scene.background.set(0x070c14);
-      scene.fog.color.set(0x070c14);
-      skyMat.color.set(0x070c14);
-
-      hemiLight.color.set(0x28384e);
-      hemiLight.groundColor.set(0x090f18);
-      hemiLight.intensity = 0.45;
-
-      sunLight.color.set(0x6e94c8);
-      sunLight.position.set(-250, 550, -350);
-      sunLight.intensity = Math.max(0.35, baseInt * 0.22);
+      scene.light = new C.DirectionalLight({
+        direction: new C.Cartesian3(-0.35, -0.55, -0.75),
+        color: new C.Color(0.60, 0.72, 0.98),
+        intensity: Math.max(0.9, baseInt * 0.45)
+      });
+      scene.skyAtmosphere.brightnessShift = -0.75;
+      scene.atmosphere.lightIntensity = 3.0;
+      scene.atmosphere.brightnessShift = -0.5;
+      scene.postProcessStages.exposure = 0.95;
+      scene.fog.density = 1.3e-4;
+      scene.fog.minimumBrightness = 0.15;
     } else {
-      // Dia soleado con nubes iluminadas
-      const skyCol = new THREE.Color(0x8eb3d4).lerp(new THREE.Color(0xf6d6b2), Math.max(0, 1 - sunElev * 2));
-      scene.background.copy(skyCol);
-      scene.fog.color.copy(skyCol);
-      skyMat.color.copy(skyCol);
-
-      hemiLight.color.set(0xfff8ee);
-      hemiLight.groundColor.set(0x556070);
-      hemiLight.intensity = 1.15 + sunElev * 0.35;
-
-      const warmSun = new THREE.Color(0xfffaec).lerp(new THREE.Color(0xffa544), Math.max(0, 1 - sunElev * 1.8));
-      sunLight.color.copy(warmSun);
-      sunLight.position.set(sunAzim * 800 + 150, Math.max(120, sunElev * 1000), 380);
-      sunLight.intensity = baseInt * Math.max(0.4, sunElev);
+      scene.light = new C.SunLight({ intensity: baseInt });
+      scene.skyAtmosphere.brightnessShift = 0.16;
+      scene.atmosphere.lightIntensity = 12.0;
+      scene.atmosphere.brightnessShift = 0.08;
+      scene.postProcessStages.exposure = 1.35;
+      scene.fog.density = 2.0e-4;
+      scene.fog.minimumBrightness = 0.62;
     }
   }
 
@@ -604,14 +526,15 @@ import * as POST from 'postprocessing';
   slInt.oninput = () => {
     baseInt = parseFloat(slInt.value);
     document.getElementById('valInt').textContent = baseInt.toFixed(1);
-    applyLuz(curHour, isNight);
+    if (!isNight) scene.light.intensity = baseInt;
+    else scene.light.intensity = Math.max(0.9, baseInt * 0.45);
   };
 
   const btnShd = document.getElementById('btnShd');
   btnShd.onclick = () => {
-    renderer.shadowMap.enabled = !renderer.shadowMap.enabled;
-    btnShd.classList.toggle('on', renderer.shadowMap.enabled);
-    btnShd.textContent = renderer.shadowMap.enabled ? 'Activadas' : 'Desactivadas';
+    viewer.shadows = !viewer.shadows;
+    btnShd.classList.toggle('on', viewer.shadows);
+    btnShd.textContent = viewer.shadows ? 'Activadas' : 'Desactivadas';
   };
 
   const sunBtn = document.getElementById('sun');
@@ -621,59 +544,14 @@ import * as POST from 'postprocessing';
     sunBtn.classList.toggle('on', p.classList.contains('on'));
   };
 
-  // 12. Redimensionamiento
-  window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    composer.setSize(window.innerWidth, window.innerHeight);
-  });
-
-  // 13. Arranque
+  // 10. Arranque Inicial y Transicion
   applyLuz(10.5, false);
+  go(0, 0); // Ir a Hotel La Fontana
   step(100, 'Listo');
   const cargaEl = document.getElementById('carga');
-  setTimeout(() => cargaEl.classList.add('fuera'), 500);
-
-  // 14. Bucle Principal de Renderizado
-  let lastT = performance.now();
-  function loop() {
-    requestAnimationFrame(loop);
-
-    const now = performance.now();
-    const dt = (now - lastT) * 0.001;
-    lastT = now;
-
-    if (tween) tween();
-
-    // Rotacion automatica continua (GIRAR)
-    if (autoRotate) {
-      controls.autoRotate = true;
-      controls.autoRotateSpeed = 0.55;
-    } else {
-      controls.autoRotate = false;
-    }
-
-    // Deriva natural de nubes con el viento
-    if (cloudMesh && cloudMesh.material.map) {
-      cloudMesh.material.map.offset.x += 0.00004;
-      cloudMesh.material.map.offset.y += 0.000015;
-    }
-
-    controls.update();
-
-    if (tiles) {
-      tiles.setCamera(camera);
-      tiles.setResolutionFromRenderer(camera, renderer);
-      tiles.update();
-    }
-
-    actualizarMarcas();
-
-    composer.render(dt);
-  }
-
-  loop();
+  setTimeout(() => cargaEl.classList.add('fuera'), 600);
+  setTimeout(startOrbit, 1800);
+  window.viewer = viewer;
 })();
 </script>
 </body>
