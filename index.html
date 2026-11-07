@@ -342,15 +342,14 @@
     scene.globe.show = true;
   }
 
-  // 4. Edificios PBR y Árboles Botánicos 3D
-  step(50, 'Edificios, Vías y Árboles 3D');
-  const load = (url, p, t) => C.Model.fromGltfAsync({url, modelMatrix: M, shadows: C.ShadowMode.ENABLED})
-    .then(m => { scene.primitives.add(m); step(p, t); return m; });
+  // 4. Carga Asíncrona de Edificios PBR y Árboles 3D en segundo plano
+  // NO bloquea la pantalla de carga para que el usuario vea la ciudad inmediatamente
+  const load = (url) => C.Model.fromGltfAsync({url, modelMatrix: M, shadows: C.ShadowMode.ENABLED})
+    .then(m => { scene.primitives.add(m); return m; })
+    .catch(e => console.warn('Carga modelo:', url, e));
 
-  await Promise.all([
-    load('modelo/ciudad.glb', 80, 'Árboles botánicos 3D'),
-    load('modelo/arboles.glb', 94, 'Optimizando escena fotorrealista')
-  ]);
+  load('modelo/ciudad.glb');
+  load('modelo/arboles.glb');
 
   // 5. Coordenadas y Vistas del Territorio
   const hotelLL = geo.hotel, uniLL = [-74.04145, 4.70208];
@@ -545,13 +544,13 @@
     document.getElementById('bSol').classList.toggle('on', p.classList.contains('on'));
   };
 
-  // 9. Arranque y Transición
+  // 9. Arranque Inmediato y Apertura de Pantalla
   applyHour(10.5);
-  flyToView(0, 0); // Posición inicial en Hotel La Fontana
+  flyToView(0, 0); // Posición inicial inmediata en Hotel La Fontana
   step(100, 'Listo');
   const cargaEl = document.getElementById('carga');
-  setTimeout(() => cargaEl.classList.add('fuera'), 500);
-  setTimeout(startOrbit, 1600);
+  cargaEl.classList.add('fuera'); // Quitar la cortina de carga INMEDIATAMENTE
+  setTimeout(startOrbit, 1800);
   window.viewer = viewer;
 })();
 </script>
