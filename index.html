@@ -326,7 +326,6 @@
 
   // 3. Google Photorealistic 3D Tiles
   step(25, 'Ciudad Fotorrealista de Google');
-  console.log('[TLF] 3. Solicitando Google 3D Tiles...');
   let tiles = null;
   if (google) {
     try {
@@ -337,17 +336,16 @@
       );
       tiles.shadows = C.ShadowMode.RECEIVE_ONLY;
       scene.primitives.add(tiles);
-      console.log('[TLF] 4. Google 3D Tiles agregado a escena.');
+      scene.globe.show = false;
     } catch (e) {
-      console.error('[TLF] Google 3D Tiles error:', e);
+      console.warn('Google 3D Tiles:', e);
       scene.globe.show = true;
     }
   } else {
     scene.globe.show = true;
   }
 
-  // 4. Carga Asíncrona de Edificios PBR y Árboles 3D en segundo plano
-  // NO bloquea la pantalla de carga para que el usuario vea la ciudad inmediatamente
+  // 4. Carga de Edificios PBR y Árboles 3D en segundo plano
   const load = (url) => C.Model.fromGltfAsync({url, modelMatrix: M, shadows: C.ShadowMode.ENABLED})
     .then(m => { scene.primitives.add(m); return m; })
     .catch(e => console.warn('Carga modelo:', url, e));
@@ -548,14 +546,15 @@
     document.getElementById('bSol').classList.toggle('on', p.classList.contains('on'));
   };
 
-  // 9. Arranque Inmediato y Apertura de Pantalla
-  console.log('[TLF] 5. Configurando luz y vista inicial...');
+  // 9. Arranque Inmediato y Eliminación Completa de Pantalla de Carga
   applyHour(10.5);
   flyToView(0, 0); // Posición inicial inmediata en Hotel La Fontana
   step(100, 'Listo');
   const cargaEl = document.getElementById('carga');
-  cargaEl.classList.add('fuera'); // Quitar la cortina de carga INMEDIATAMENTE
-  console.log('[TLF] 6. Escena completamente abierta y lista.');
+  if (cargaEl) {
+    cargaEl.style.opacity = '0';
+    setTimeout(() => cargaEl.remove(), 400); // Destruir elemento del DOM
+  }
   setTimeout(startOrbit, 1800);
   window.viewer = viewer;
 })();
