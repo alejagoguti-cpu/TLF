@@ -272,6 +272,7 @@
   if (cfg.cesiumIonToken) C.Ion.defaultAccessToken = cfg.cesiumIonToken;
 
   // 1. Visor CesiumJS configurado para fotorrealismo
+  console.log('[TLF] 1. Creando visor Cesium...');
   const viewer = new C.Viewer('map', {
     animation: false, timeline: false, baseLayerPicker: false, geocoder: false,
     homeButton: false, sceneModePicker: false, navigationHelpButton: false,
@@ -284,6 +285,7 @@
     },
     msaaSamples: 4, shadows: true, terrainShadows: C.ShadowMode.RECEIVE_ONLY,
   });
+  console.log('[TLF] 2. Visor creado con éxito.');
 
   const scene = viewer.scene;
   scene.globe.show = false; // Google 3D Tiles es el mundo completo; el globo 2D queda oculto
@@ -324,6 +326,7 @@
 
   // 3. Google Photorealistic 3D Tiles
   step(25, 'Ciudad Fotorrealista de Google');
+  console.log('[TLF] 3. Solicitando Google 3D Tiles...');
   let tiles = null;
   if (google) {
     try {
@@ -334,8 +337,9 @@
       );
       tiles.shadows = C.ShadowMode.RECEIVE_ONLY;
       scene.primitives.add(tiles);
+      console.log('[TLF] 4. Google 3D Tiles agregado a escena.');
     } catch (e) {
-      console.warn('Google 3D Tiles:', e);
+      console.error('[TLF] Google 3D Tiles error:', e);
       scene.globe.show = true;
     }
   } else {
@@ -545,11 +549,13 @@
   };
 
   // 9. Arranque Inmediato y Apertura de Pantalla
+  console.log('[TLF] 5. Configurando luz y vista inicial...');
   applyHour(10.5);
   flyToView(0, 0); // Posición inicial inmediata en Hotel La Fontana
   step(100, 'Listo');
   const cargaEl = document.getElementById('carga');
   cargaEl.classList.add('fuera'); // Quitar la cortina de carga INMEDIATAMENTE
+  console.log('[TLF] 6. Escena completamente abierta y lista.');
   setTimeout(startOrbit, 1800);
   window.viewer = viewer;
 })();
