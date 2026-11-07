@@ -134,7 +134,7 @@
 
   // ---- visor Cesium: solo la ciudad fotorrealista de Google (sin modelos propios encima) ----
   if (cfg.cesiumIonToken) C.Ion.defaultAccessToken = cfg.cesiumIonToken;
-  const movil = Math.min(innerWidth, innerHeight) < 700;
+  const movil = innerWidth < 700 || /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
   const viewer = new C.Viewer('vista', {
     animation: false, timeline: false, baseLayerPicker: false, geocoder: false, homeButton: false,
     sceneModePicker: false, navigationHelpButton: false, fullscreenButton: false, infoBox: false,
