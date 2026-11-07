@@ -27,7 +27,7 @@
 
   /* Filtro de color grading fotorrealista (estilo Kennedy 360 / Render Unreal Engine) */
   #map canvas{
-    filter: contrast(1.15) saturate(1.28) brightness(1.02);
+    filter: contrast(1.08) saturate(1.12) brightness(1.02);
   }
 
   /* Viñeta cinematográfica tipo render */
@@ -358,11 +358,11 @@
   const at = (ll, up = 0) => C.Cartesian3.fromDegrees(ll[0], ll[1], h + up);
 
   const views = [
-    { label: 'Ubicación General', target: at([-74.0400, 4.6930]), heading: 345, pitch: -22, range: 4500 },
-    { label: 'Hotel La Fontana', target: at(hotelLL, 14), heading: 215, pitch: -28, range: 450 },
-    { label: 'Unicentro', target: at(uniLL, 10), heading: 330, pitch: -32, range: 700 },
-    { label: 'Master Plan', target: at([geo.lon - 0.001, geo.lat + 0.001]), heading: 20, pitch: -50, range: 2200 },
-    { label: 'Fachada Calle 127', target: at(hotelLL, 10), heading: 180, pitch: -12, range: 210 },
+    { label: 'Hotel La Fontana', target: at(hotelLL, 14), heading: 215, pitch: -28, range: 420 },
+    { label: 'Unicentro Bogotá', target: at(uniLL, 10), heading: 330, pitch: -30, range: 680 },
+    { label: 'Fachada Calle 127', target: at(hotelLL, 10), heading: 180, pitch: -14, range: 210 },
+    { label: 'Panorámica Urbana', target: at(uniLL, 10), heading: 350, pitch: -25, range: 1600 },
+    { label: 'Master Plan', target: at([geo.lon - 0.001, geo.lat + 0.001]), heading: 20, pitch: -48, range: 2100 },
   ];
 
   let currentView = 0;
@@ -496,11 +496,11 @@
     viewer.camera.zoomOut(viewer.camera.positionCartographic.height * 0.35);
   };
 
-  // Botón Maqueta 3D (alterna entre Ubicación General y Hotel)
-  let modoHotel = false;
+  // Botón Maqueta 3D (alterna entre Hotel y Panorámica Urbana)
+  let modoHotel = true;
   document.getElementById('bMaqueta').onclick = () => {
     modoHotel = !modoHotel;
-    flyToView(modoHotel ? 1 : 0);
+    flyToView(modoHotel ? 0 : 3);
   };
 
   // Alineación al Norte
