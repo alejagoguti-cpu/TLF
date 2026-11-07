@@ -358,11 +358,11 @@
   const at = (ll, up = 0) => C.Cartesian3.fromDegrees(ll[0], ll[1], h + up);
 
   const views = [
-    { label: 'Hotel La Fontana', target: at(hotelLL, 14), heading: 205, pitch: -18, range: 750 },
-    { label: 'Ubicación General', target: at([-74.0400, 4.6930]), heading: 345, pitch: -20, range: 3800 },
-    { label: 'Master Plan', target: at([geo.lon - 0.001, geo.lat + 0.001]), heading: 25, pitch: -38, range: 1800 },
-    { label: 'Fachada Calle 127', target: at(hotelLL, 10), heading: 180, pitch: -12, range: 240 },
-    { label: 'Unicentro', target: at(uniLL, 10), heading: 335, pitch: -24, range: 850 },
+    { label: 'Ubicación General', target: at([-74.0400, 4.6930]), heading: 345, pitch: -22, range: 4500 },
+    { label: 'Hotel La Fontana', target: at(hotelLL, 14), heading: 215, pitch: -28, range: 450 },
+    { label: 'Unicentro', target: at(uniLL, 10), heading: 330, pitch: -32, range: 700 },
+    { label: 'Master Plan', target: at([geo.lon - 0.001, geo.lat + 0.001]), heading: 20, pitch: -50, range: 2200 },
+    { label: 'Fachada Calle 127', target: at(hotelLL, 10), heading: 180, pitch: -12, range: 210 },
   ];
 
   let currentView = 0;
@@ -496,11 +496,11 @@
     viewer.camera.zoomOut(viewer.camera.positionCartographic.height * 0.35);
   };
 
-  // Botón Maqueta 3D (alterna Hotel y Ubicación General)
-  let modoHotel = true;
+  // Botón Maqueta 3D (alterna entre Ubicación General y Hotel)
+  let modoHotel = false;
   document.getElementById('bMaqueta').onclick = () => {
     modoHotel = !modoHotel;
-    flyToView(modoHotel ? 0 : 1);
+    flyToView(modoHotel ? 1 : 0);
   };
 
   // Alineación al Norte
