@@ -151,8 +151,8 @@
   #panelLuz input[type=range]{width:100%;accent-color:var(--acento);cursor:pointer}
 
   /* Pantalla de carga */
-  #carga{position:fixed;inset:0;display:grid;place-items:center;background:var(--fondo);z-index:100;transition:opacity .7s}
-  #carga.fuera{opacity:0;pointer-events:none}
+  #carga{position:fixed;inset:0;display:grid;place-items:center;background:var(--fondo);z-index:100;transition:opacity .5s}
+  #carga.fuera{opacity:0;pointer-events:none;display:none!important}
   #carga .t{width:min(340px,82vw);text-align:center}
   #carga h1{font-size:26px;font-family:"Playfair Display",serif;color:#fff}
   #carga h1 span{color:var(--acento)}
@@ -360,11 +360,11 @@
   const at = (ll, up = 0) => C.Cartesian3.fromDegrees(ll[0], ll[1], h + up);
 
   const views = [
-    { label: 'Hotel La Fontana', target: at(hotelLL, 14), heading: 215, pitch: -28, range: 430 },
-    { label: 'Ubicación General', target: at([-74.0400, 4.6930]), heading: 345, pitch: -24, range: 4800 },
-    { label: 'Master Plan', target: at([geo.lon - 0.001, geo.lat + 0.001]), heading: 20, pitch: -48, range: 2200 },
-    { label: 'Fachada Calle 127', target: at(hotelLL, 12), heading: 180, pitch: -12, range: 210 },
-    { label: 'Unicentro', target: at(uniLL, 10), heading: 330, pitch: -35, range: 750 },
+    { label: 'Hotel La Fontana', target: at(hotelLL, 14), heading: 205, pitch: -18, range: 750 },
+    { label: 'Ubicación General', target: at([-74.0400, 4.6930]), heading: 345, pitch: -20, range: 3800 },
+    { label: 'Master Plan', target: at([geo.lon - 0.001, geo.lat + 0.001]), heading: 25, pitch: -38, range: 1800 },
+    { label: 'Fachada Calle 127', target: at(hotelLL, 10), heading: 180, pitch: -12, range: 240 },
+    { label: 'Unicentro', target: at(uniLL, 10), heading: 335, pitch: -24, range: 850 },
   ];
 
   let currentView = 0;
