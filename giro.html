@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hotel La Fontana 360</title>
+<meta name="description" content="Recorrido fotorrealista del entorno del Hotel Estelar La Fontana y Unicentro, Bogotá">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--fg:#fff;--muted:rgba(255,255,255,.72);--glass:rgba(17,24,32,.62);--line:rgba(255,255,255,.14);--acento:#34d399;--cian:#7dd3fc}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:#0b1015;color:var(--fg);font-family:Inter,system-ui,sans-serif;overflow:hidden;-webkit-user-select:none;user-select:none;touch-action:none}
+  #vista{position:fixed;inset:0;cursor:grab}#vista.arr{cursor:grabbing}
+  canvas{width:100%;height:100%;display:block}
+  .vidrio{background:var(--glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:12px}
+  #titulo{position:fixed;top:14px;left:14px;display:flex;gap:10px;align-items:center;padding:10px 14px}
+  #titulo b{display:block;font-size:14px}#titulo small{display:block;font-size:11px;color:var(--muted);margin-top:1px}
+  #titulo svg{width:20px;height:20px;color:var(--acento)}
+  #grados{position:fixed;top:14px;right:14px;padding:8px 10px;font:700 12px Inter;color:var(--cian)}
+  .pin{position:fixed;transform:translate(-50%,-100%);pointer-events:none;transition:opacity .2s}
+  .pin .et{display:flex;align-items:center;gap:7px;padding:6px 10px;font-size:12px;font-weight:700;white-space:nowrap;border-radius:9px;background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(8px)}
+  .pin .et i{width:8px;height:8px;border-radius:50%;background:var(--acento);box-shadow:0 0 0 3px rgba(52,211,153,.25)}
+  .pin.main .et{background:rgba(52,211,153,.92);color:#06281c;border-color:transparent;font-size:13px}
+  .pin.main .et i{background:#06281c;box-shadow:none}
+  .pin .palo{width:1px;height:18px;margin:0 auto;background:rgba(255,255,255,.55)}
+  #ctrl{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:8px;align-items:center}
+  #ctrl button{height:44px;min-width:44px;padding:0 14px;display:flex;align-items:center;gap:8px;justify-content:center;color:var(--fg);font:700 13px Inter;letter-spacing:1.5px;cursor:pointer}
+  #ctrl button svg{width:18px;height:18px}
+  #ctrl button.on{color:var(--acento)}
+  #ctrl a.maq{height:44px;display:flex;align-items:center;gap:8px;padding:0 18px;border-radius:12px;text-decoration:none;color:#052e22;font:700 14px Inter;letter-spacing:2.5px;background:linear-gradient(90deg,#7dd3fc,#34d399)}
+  #mapa{position:fixed;right:14px;bottom:14px;padding:10px 12px 8px;width:190px}
+  #mapa b{font-size:10px;letter-spacing:1.6px;color:var(--cian)}
+  #mapa svg{width:100%;height:auto;display:block;margin-top:4px}
+  #mapa small{font-size:10px;color:var(--muted)}
+  #carga{position:fixed;inset:0;display:grid;place-items:center;background:#0b1015;z-index:9;transition:opacity .7s}
+  #carga.fuera{opacity:0;pointer-events:none}
+  #carga .t{width:min(340px,84vw);text-align:center}
+  #carga h1{font-size:26px}#carga h1 span{color:var(--acento)}
+  #carga p{font-size:12.5px;color:var(--muted);margin-top:6px}
+  #carga .barra{height:3px;background:rgba(255,255,255,.12);border-radius:3px;margin-top:16px;overflow:hidden}
+  #carga .barra i{display:block;height:100%;width:0;background:var(--acento);transition:width .2s}
+  #carga small{display:block;margin-top:8px;color:var(--muted);font-size:11px}
+  #cred{position:fixed;left:10px;bottom:6px;font-size:10px;color:rgba(255,255,255,.55)}
+  @media (max-width:700px){#mapa{display:none}#ctrl{bottom:12px;gap:6px}#ctrl button{padding:0 10px;min-width:40px}#ctrl .txt{display:none}#ctrl a.maq{padding:0 12px;letter-spacing:1px;font-size:12px}}
+</style>
+</head>
+<body>
+<div id="vista"><canvas id="lienzo"></canvas></div>
+<div id="marcas"></div>
+<div id="titulo" class="vidrio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="m3 7 9 5 9-5"/><path d="M12 12v10"/></svg><div><b>Hotel La Fontana 360</b><small id="subtit">Bogotá</small></div></div>
+<div id="grados" class="vidrio">0°</div>
+<div id="ctrl">
+  <button id="ant" class="vidrio" title="Parada anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="m15 18-6-6 6-6"/></svg></button>
+  <button id="baja" class="vidrio" title="Bajar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg></button>
+  <button id="sube" class="vidrio" title="Subir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+  <button id="girar" class="vidrio on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg><span class="txt">GIRAR</span></button>
+  <button id="sig" class="vidrio" title="Parada siguiente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></svg></button>
+  <a class="maq" href="maqueta.html"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="m3 7 9 5 9-5"/><path d="M12 12v10"/></svg>MAQUETA 3D</a>
+</div>
+<div id="mapa" class="vidrio"><b>PARADAS</b><svg id="mapaSvg" viewBox="0 0 168 112"></svg><small>Toca una parada o usa ← →</small></div>
+<div id="cred">Imágenes 3D: Google · Render: Unreal Engine + Cesium</div>
+<div id="carga"><div class="t"><h1>Hotel La Fontana <span>360</span></h1><p>Recorrido fotorrealista del entorno · Unicentro · Bogotá</p><div class="barra"><i id="barra"></i></div><small id="cargaTxt">Cargando vistas</small></div></div>
+
+<script>
+(async () => {
+  const cfg = await (await fetch('giro/paradas.json', {cache: 'no-cache'})).json();
+  const PAR = cfg.paradas;
+  const cv = document.getElementById('lienzo'), ctx = cv.getContext('2d');
+  const vista = document.getElementById('vista'), marcas = document.getElementById('marcas');
+  const chico = Math.min(innerWidth, innerHeight) < 700 || (navigator.connection && navigator.connection.saveData);
+  let est = 0, P = null, cur = 0, pos = 0, vel = 0, arr = false, lastX = 0, auto = true;
+
+  function img(src) { return new Promise(r => { const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = src; }); }
+  async function cargar(s, prog) {
+    const p = PAR[s];
+    if (p.s) return;
+    p.s = new Array(p.n); let n = 0;
+    await Promise.all(Array.from({length: p.n}, async (_, k) => {
+      p.s[k] = await img(`giro/${p.id}/s_${String(k).padStart(3, '0')}.webp`);
+      prog && prog(++n, p.n);
+    }));
+    if (!chico) { p.f = new Array(p.n); for (let k = 0; k < p.n; k++) img(`giro/${p.id}/f_${String(k).padStart(3, '0')}.webp`).then(i => { p.f[k] = i; if (P === p && k === cur) dibujar(); }); }
+  }
+  function tam() { const d = Math.min(devicePixelRatio || 1, 2); cv.width = innerWidth * d; cv.height = innerHeight * d; dibujar(); }
+  addEventListener('resize', tam);
+  function ajuste() { const W = cv.width, H = cv.height, s = Math.max(W / P.w, H / P.h); return {s, ox: (W - P.w * s) / 2, oy: (H - P.h * s) / 2}; }
+  function dibujar() {
+    if (!P) return;
+    const i = (P.f && P.f[cur]) || P.s[cur]; if (!i) return;
+    const a = ajuste(); ctx.drawImage(i, a.ox, a.oy, P.w * a.s, P.h * a.s);
+    const d = cv.width / innerWidth;
+    [...marcas.children].forEach((el, k) => {
+      const xy = P.pins[k].xy[cur];
+      if (!xy) { el.style.opacity = 0; return; }
+      el.style.opacity = 1; el.style.left = (a.ox + xy[0] * P.w * a.s) / d + 'px'; el.style.top = (a.oy + xy[1] * P.h * a.s) / d + 'px';
+    });
+    document.getElementById('grados').textContent = Math.round(cur * 360 / P.n) + '°';
+  }
+  async function ir(s) {
+    s = Math.max(0, Math.min(PAR.length - 1, s));
+    const C = document.getElementById('carga');
+    if (!PAR[s].s) { C.classList.remove('fuera'); await cargar(s, (n, t) => { document.getElementById('barra').style.width = 100 * n / t + '%'; document.getElementById('cargaTxt').textContent = `Cargando vistas · ${n} de ${t}`; }); }
+    C.classList.add('fuera');
+    const frac = P ? cur / P.n : 0;
+    est = s; P = PAR[s]; pos = cur = Math.round(frac * P.n) % P.n;
+    document.getElementById('subtit').textContent = P.nombre + ' · Bogotá';
+    marcas.innerHTML = '';
+    P.pins.forEach(p => { const d = document.createElement('div'); d.className = 'pin' + (p.main ? ' main' : ''); d.innerHTML = `<div class="et"><i></i>${p.label}</div><div class="palo"></div>`; marcas.appendChild(d); });
+    mapa(); tam();
+    PAR.forEach((_, k) => { if (Math.abs(k - s) === 1) cargar(k); });
+  }
+  function mapa() {
+    const xs = PAR.map(p => p.ll[0]), ys = PAR.map(p => p.ll[1]);
+    const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+    const sx = v => 20 + 128 * (x1 > x0 ? (v - x0) / (x1 - x0) : .5), sy = v => 92 - 72 * (y1 > y0 ? (v - y0) / (y1 - y0) : .5);
+    const svg = document.getElementById('mapaSvg');
+    svg.innerHTML = '<text x="160" y="10" fill="rgba(255,255,255,.6)" font-size="8" text-anchor="end">N↑</text>' +
+      PAR.map((p, k) => `<g data-s="${k}" style="cursor:pointer"><circle cx="${sx(p.ll[0])}" cy="${sy(p.ll[1])}" r="${k === est ? 6 : 4}" fill="${k === est ? '#7dd3fc' : '#34d399'}" stroke="#fff" stroke-width="${k === est ? 2 : 0}"/><text x="${sx(p.ll[0]) + 9}" y="${sy(p.ll[1]) + 3}" fill="#fff" font-size="8.5" font-weight="700">${p.nombre}</text><circle cx="${sx(p.ll[0])}" cy="${sy(p.ll[1])}" r="14" fill="transparent"/></g>`).join('');
+    svg.querySelectorAll('g').forEach(g => g.onclick = () => ir(+g.dataset.s));
+  }
+
+  const ppf = () => Math.max(5, innerWidth / P.n * 1.5);
+  vista.addEventListener('pointerdown', e => { arr = true; auto = false; lastX = e.clientX; vel = 0; vista.classList.add('arr'); vista.setPointerCapture(e.pointerId); boton(); });
+  vista.addEventListener('pointermove', e => { if (!arr) return; const dx = e.clientX - lastX; lastX = e.clientX; vel = -dx / ppf(); pos += vel; });
+  const fin = () => { arr = false; vista.classList.remove('arr'); };
+  vista.addEventListener('pointerup', fin); vista.addEventListener('pointercancel', fin);
+  function boton() { document.getElementById('girar').classList.toggle('on', auto); }
+  document.getElementById('girar').onclick = () => { auto = !auto; boton(); };
+  document.getElementById('ant').onclick = () => ir(est - 1);
+  document.getElementById('sig').onclick = () => ir(est + 1);
+  // subir / bajar: paradas ordenadas de cerca a lejos
+  document.getElementById('sube').onclick = () => ir(est + 1);
+  document.getElementById('baja').onclick = () => ir(est - 1);
+  addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft') ir(est - 1); if (e.key === 'ArrowRight') ir(est + 1);
+    if (e.key === 'ArrowUp') ir(est + 1); if (e.key === 'ArrowDown') ir(est - 1);
+  });
+  (function tick() {
+    if (P) {
+      if (!arr) { pos += vel; vel *= 0.92; if (auto && Math.abs(vel) < 0.02) pos += 0.06; }
+      const f = ((Math.round(pos) % P.n) + P.n) % P.n;
+      if (f !== cur) { cur = f; dibujar(); }
+    }
+    requestAnimationFrame(tick);
+  })();
+  ir(0);
+})();
+</script>
+</body>
+</html>
