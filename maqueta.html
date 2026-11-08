@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Hotel La Fontana 360</title>
+<meta name="description" content="Recorrido fotorrealista del Hotel La Fontana y Unicentro, Bogotá">
+<link rel="icon" href="data:,">
+<link href="https://cdn.jsdelivr.net/npm/cesium@1.124.0/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/cesium@1.124.0/Build/Cesium/Cesium.js"></script>
+<script src="config.js"></script>
+<style>
+  :root{--fondo:#060b12;--panel:rgba(8,16,26,.72);--borde:rgba(125,211,252,.22);--texto:#e2f3ff;--suave:#94a3b8;--acento:#7dd3fc;--verde:#34d399}
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:100%;height:100%;overflow:hidden;background:var(--fondo);color:var(--texto);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-user-select:none;user-select:none}
+  #vista{position:fixed;inset:0;cursor:grab;touch-action:none}
+  #vista.arrastrando{cursor:grabbing}
+  #vista canvas{width:100%;height:100%;display:block}
+  .ic{width:18px;height:18px;flex:none}
+  /* portada */
+  #carga{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:var(--fondo);transition:opacity .8s,visibility .8s}
+  #carga.fuera{opacity:0;visibility:hidden}
+  #carga .bg{position:absolute;inset:-10%;background:radial-gradient(55% 45% at 72% 28%,rgba(56,189,248,.2),transparent 70%),radial-gradient(45% 40% at 18% 78%,rgba(52,211,153,.15),transparent 70%);animation:deriva 16s ease-in-out infinite alternate}
+  #carga .tarjeta{position:relative;width:min(420px,calc(100vw - 32px));padding:26px 24px 22px;border-radius:18px;background:rgba(10,18,30,.66);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border:1px solid var(--borde);box-shadow:0 30px 80px rgba(0,0,0,.55);animation:entra .8s cubic-bezier(.2,.7,.2,1) both}
+  .marca{display:flex;align-items:center;gap:10px;color:var(--acento);font-size:11px;font-weight:700;letter-spacing:.32em;text-transform:uppercase}
+  .marca .ic{width:22px;height:22px}
+  #carga h1{margin:14px 0 4px;font-size:32px;line-height:1.05;font-weight:800;color:#f1f7fd}
+  #carga h1 span{background:linear-gradient(100deg,#7dd3fc,#34d399);-webkit-background-clip:text;background-clip:text;color:transparent}
+  #carga p{color:var(--suave);font-size:13px;margin-bottom:18px}
+  .barra{height:4px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden}
+  .barra i{display:block;height:100%;width:4%;background:linear-gradient(90deg,#38bdf8,#34d399);transition:width .3s}
+  #cargaTxt{margin-top:10px;font-size:12px;color:var(--acento)}
+  @keyframes deriva{to{transform:translate3d(-3%,2%,0) scale(1.06)}}
+  @keyframes entra{from{opacity:0;transform:translateY(14px)}}
+  /* interfaz */
+  .chip{position:fixed;z-index:10;display:flex;align-items:center;gap:10px;padding:9px 13px;border-radius:12px;background:var(--panel);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid var(--borde)}
+  #titulo{top:14px;left:14px}
+  #mapa{position:fixed;z-index:10;right:14px;bottom:max(18px,env(safe-area-inset-bottom));width:184px;padding:8px 8px 6px;border-radius:14px;background:var(--panel);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid var(--borde)}
+  #mapa b{display:block;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--acento);margin:0 0 2px 4px}
+  #mapa svg{display:block;width:168px;height:112px}
+  #mapa small{display:block;font-size:10px;color:var(--suave);margin:2px 4px 0}
+  #fIr{display:none;margin-top:14px;height:40px;width:100%;text-decoration:none}
+  #fIr.on{display:inline-flex}
+  #titulo b{font-size:13px;letter-spacing:.04em}
+  #titulo small{display:block;font-size:11px;color:var(--suave);margin-top:2px}
+  #barraInf{position:fixed;z-index:10;left:50%;bottom:max(18px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;gap:8px;align-items:center}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:46px;padding:0 18px;border:none;border-radius:12px;background:var(--panel);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:var(--texto);font:600 12px/1 inherit;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;box-shadow:inset 0 0 0 1px var(--borde);transition:background .15s,transform .15s}
+  .btn:hover{background:rgba(14,40,64,.88)}
+  .btn.redondo{width:46px;padding:0}
+  .btn.on{color:#04121c;background:linear-gradient(100deg,#bae6fd,#7dd3fc);box-shadow:none}
+  .btn.principal{color:#04121c;background:linear-gradient(100deg,#7dd3fc,#34d399);box-shadow:none;text-decoration:none;white-space:nowrap}
+  #grados{position:fixed;z-index:10;right:14px;top:14px;font:600 12px/1 ui-monospace,monospace;color:var(--acento);padding:10px 12px}
+  #ayuda{position:fixed;z-index:10;left:50%;bottom:84px;transform:translateX(-50%);display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;background:var(--panel);font-size:12px;color:#cfe7f7;opacity:0;transition:opacity .6s;pointer-events:none;white-space:nowrap}
+  #ayuda.on{opacity:1}
+  #atrib{position:fixed;z-index:9;left:10px;bottom:6px;font-size:10px;color:#e8eef7;opacity:.85;text-shadow:0 1px 2px #000;max-width:60vw}
+  /* marcadores */
+  #marcas{position:fixed;inset:0;z-index:8;pointer-events:none}
+  .pin{position:absolute;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;transition:opacity .2s}
+  .pin .et{display:flex;align-items:center;gap:7px;padding:6px 10px;border-radius:10px;background:rgba(8,16,26,.8);border:1px solid var(--borde);font-size:12px;font-weight:600;white-space:nowrap;pointer-events:auto;cursor:pointer}
+  .pin .et i{width:8px;height:8px;border-radius:50%;background:var(--verde);box-shadow:0 0 0 4px rgba(52,211,153,.2)}
+  .pin .palo{width:1px;height:26px;background:linear-gradient(var(--acento),transparent)}
+  .pin.oculto{opacity:0}
+  #ficha{position:fixed;z-index:12;left:50%;top:50%;transform:translate(-50%,-50%) scale(.96);width:min(360px,calc(100vw - 32px));padding:18px;border-radius:16px;background:rgba(10,18,30,.9);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid var(--borde);opacity:0;pointer-events:none;transition:.25s}
+  #ficha.on{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+  #ficha h2{font-size:18px;margin-bottom:6px}
+  #ficha p{font-size:13px;color:var(--suave);line-height:1.5}
+  #ficha .cerrar{position:absolute;right:10px;top:10px;width:30px;height:30px}
+  @media(max-width:700px){#bAuto{display:none}#mapa{top:66px;bottom:auto;right:10px;width:150px;padding:6px}#mapa svg{width:136px;height:91px}#mapa small{display:none}#titulo small{display:none}.btn{height:42px;padding:0 12px;font-size:11px;letter-spacing:.08em}.btn.redondo{width:42px}#ayuda{bottom:76px;font-size:11px}#grados{display:none}.btn .txt{display:none}.btn.principal .txt{display:inline}#atrib{bottom:auto;top:70px;left:16px;max-width:calc(100vw - 190px)}}
+  #vista .cesium-viewer,#vista .cesium-widget,#vista .cesium-widget canvas{width:100%;height:100%}
+  #vista .cesium-viewer-bottom,#vista .cesium-widget-credits{display:none!important}
+  #vista canvas{filter:contrast(1.06) saturate(1.12)}
+  #grade{position:fixed;inset:0;z-index:5;pointer-events:none;background:radial-gradient(ellipse at 50% 45%,transparent 58%,rgba(2,6,14,.36) 100%)}
+</style>
+</head>
+<body>
+<div id="vista"></div>
+<div id="grade"></div>
+<div id="marcas"></div>
+
+<div id="carga">
+  <div class="bg"></div>
+  <div class="tarjeta">
+    <div class="marca"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="m3 7 9 5 9-5"/><path d="M12 12v10"/></svg><span>REN3D</span></div>
+    <h1>Hotel La Fontana <span>360</span></h1>
+    <p id="cargaSub">Recorrido fotorrealista entre el Hotel La Fontana, Unicentro y Usaquén · Bogotá</p>
+    <div class="barra"><i id="cargaBarra"></i></div>
+    <div id="cargaTxt">Cargando vistas…</div>
+  </div>
+</div>
+
+<div class="chip" id="titulo"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--acento)"><path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="m3 7 9 5 9-5"/><path d="M12 12v10"/></svg><div><b>Hotel La Fontana 360</b><small id="subtit">Hotel La Fontana · Bogotá</small></div></div>
+<div id="mapa"><b>Recorrido</b><svg id="mapaSvg" viewBox="0 0 168 112" aria-label="Paradas del recorrido"></svg><small>Toca una parada o usa ↑ ↓</small></div>
+<div class="chip" id="grados">0°</div>
+
+<div id="barraInf">
+  <button class="btn redondo" id="bIzq" aria-label="Girar a la izquierda"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+  <button class="btn redondo" id="bAtras" aria-label="Retroceder"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg></button>
+  <button class="btn redondo" id="bAdelante" aria-label="Avanzar hacia donde miras"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg></button>
+  <button class="btn" id="bAuto" aria-label="Giro automático"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg><span class="txt">Girar</span></button>
+  <button class="btn redondo" id="bDer" aria-label="Girar a la derecha"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+  <a class="btn principal" id="bMaqueta" href="#"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="m3 7 9 5 9-5"/><path d="M12 12v10"/></svg><span class="txt">Maqueta 3D</span></a>
+</div>
+<div id="ayuda"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-4 0v5"/><path d="M14 10V4a2 2 0 0 0-4 0v6"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.9-6-2.4l-3.6-3.6a2 2 0 0 1 2.8-2.8L7 15"/></svg><span>Arrastra de lado para girar · arriba/abajo o ↑ ↓ para recorrer</span></div>
+<div id="ficha"><button class="btn redondo cerrar" id="fCerrar" aria-label="Cerrar">✕</button><h2 id="fTit"></h2><p id="fTxt"></p><a class="btn principal" id="fIr" href="#"><span class="txt">Ir a este lugar</span></a></div>
+<div id="atrib">Imágenes 3D: Google · Render: Cesium</div>
+
+<script>
+(async function () {
+  'use strict';
+  const C = Cesium, cfg = window.TLF_CONFIG || {}, $ = id => document.getElementById(id);
+  // Misma cámara del giro de Kennedy 360: dron a 260 m, órbita de 650 m, lente de 20 mm, 72 vistas por vuelta
+  const G = { N: 72, RADIO: 650, ALTO: 260, OBJ_Z: 25, FOCAL: 20, SENSOR_W: 36, H: 2572 };
+  const PARADAS = [
+    { nombre: 'Hotel La Fontana', lon: -74.043673, lat: 4.704706, fin: true },
+    { nombre: 'Unicentro', lon: -74.04145, lat: 4.70208 },
+    { nombre: 'Recorrido Unicentro – Usaquén', lon: -74.03610, lat: 4.69850 },
+    { nombre: 'Usaquén', lon: -74.03070, lat: 4.69490, fin: true }
+  ];
+  const MX = 111320 * Math.cos(4.7 * Math.PI / 180), MY = 110540;
+  PARADAS.forEach(p => { p.X = (p.lon - PARADAS[0].lon) * MX; p.Y = -(p.lat - PARADAS[0].lat) * MY; });
+  const PUNTOS = [
+    { n: 'Hotel La Fontana', lon: -74.043673, lat: 4.704706, z: 30, ir: 0, d: 'Hotel de Bogotá con arquitectura de patios y jardines interiores, sobre la Calle 127 junto a Unicentro.' },
+    { n: 'Unicentro', lon: -74.04145, lat: 4.70208, z: 30, ir: 1, d: 'Centro comercial pionero de Colombia (1976), en la Calle 127 con Carrera 15: polo comercial del norte de Bogotá.' },
+    { n: 'Usaquén', lon: -74.0307, lat: 4.6949, z: 20, ir: 3, d: 'Barrio histórico con plaza fundacional, arquitectura colonial y mercado de pulgas dominical.' },
+    { n: 'Hacienda Santa Bárbara', lon: -74.0321, lat: 4.6972, z: 25, d: 'Centro comercial levantado sobre una antigua hacienda colonial.' },
+    { n: 'Parque de la 93', lon: -74.0483, lat: 4.6765, z: 20, d: 'Parque urbano rodeado de restaurantes y oficinas.' },
+    { n: 'Autopista Norte', lon: -74.0525, lat: 4.7040, z: 15, d: 'Eje vial y de TransMilenio hacia el norte de la ciudad.' },
+    { n: 'Cerros Orientales', lon: -74.0225, lat: 4.7050, z: 350, d: 'Cordillera que enmarca la sabana de Bogotá por el oriente.' }
+  ];
+  const qs = new URLSearchParams(location.search);
+  let est = Math.max(0, Math.min(PARADAS.length - 1, +qs.get('p') || 0));
+  let pos = 18, vel = 0, auto = false, arrastre = null, ultimoX = 0, ultimoT = 0, giroBtn = null;
+  let centro = { lon: PARADAS[est].lon, lat: PARADAS[est].lat }, vuelo = null;
+
+  // ---- visor Cesium: solo la ciudad fotorrealista de Google (sin modelos propios encima) ----
+  if (cfg.cesiumIonToken) C.Ion.defaultAccessToken = cfg.cesiumIonToken;
+  const movil = innerWidth < 700 || /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
+  const viewer = new C.Viewer('vista', {
+    animation: false, timeline: false, baseLayerPicker: false, geocoder: false, homeButton: false,
+    sceneModePicker: false, navigationHelpButton: false, fullscreenButton: false, infoBox: false,
+    selectionIndicator: false, baseLayer: false, msaaSamples: movil ? 1 : 4, shadows: false
+  });
+  const scene = viewer.scene, cam = viewer.camera;
+  viewer.useBrowserRecommendedResolution = false;
+  viewer.resolutionScale = Math.min(devicePixelRatio || 1, 2) / (devicePixelRatio || 1);
+  scene.globe.show = false;
+  scene.highDynamicRange = false;
+  scene.skyAtmosphere.show = true;
+  scene.fog.enabled = true; scene.fog.density = 6e-5; scene.fog.minimumBrightness = 0.9;
+  scene.postProcessStages.fxaa.enabled = true;
+  scene.screenSpaceCameraController.enableInputs = false; // la cámara la maneja el giro, igual que el render
+  cam.frustum.fov = 2 * Math.atan((G.SENSOR_W / 2) / G.FOCAL);
+  cam.frustum.near = 1;
+
+  let tiles = null, pendientes = 1;
+  try {
+    const opcGoogle = { onlyUsingWithGoogleGeocoder: true };
+    if (cfg.googleMapsKey) opcGoogle.key = cfg.googleMapsKey;
+    tiles = await C.createGooglePhotorealistic3DTileset(opcGoogle,
+      { maximumScreenSpaceError: movil ? 12 : 6, dynamicScreenSpaceError: false, foveatedScreenSpaceError: true, cacheBytes: 1024 * 1024 * 1024 });
+    scene.primitives.add(tiles);
+    tiles.loadProgress.addEventListener((p, q) => { pendientes = p + q; });
+  } catch (e) {
+    console.warn('Google 3D Tiles:', e);
+    $('cargaTxt').textContent = 'No se pudo cargar la ciudad 3D de Google (revisa la llave en config.js)';
+  }
+
+  // ---- cámara del giro ----
+  function ponerCamara() {
+    const a = 2 * Math.PI * pos / G.N;
+    const objetivo = C.Cartesian3.fromDegrees(centro.lon, centro.lat, G.H + G.OBJ_Z);
+    const pitch = -Math.atan2(G.ALTO - G.OBJ_Z, G.RADIO), rango = Math.hypot(G.RADIO, G.ALTO - G.OBJ_Z);
+    cam.lookAt(objetivo, new C.HeadingPitchRange(a + Math.PI, pitch, rango)); // a = 0: cámara al norte mirando al sur
+  }
+  const actual = () => ((Math.round(pos) % G.N) + G.N) % G.N;
+
+  // ---- marcadores ----
+  const tmp = new C.Cartesian2(), v3 = new C.Cartesian3();
+  const pins = PUNTOS.map(p => {
+    const d = document.createElement('div'); d.className = 'pin oculto';
+    d.innerHTML = '<div class="et"><i></i>' + p.n + '</div><div class="palo"></div>';
+    d.querySelector('.et').onclick = () => {
+      $('fTit').textContent = p.n; $('fTxt').textContent = p.d;
+      const ir = p.ir !== undefined && p.ir !== est;
+      $('fIr').classList.toggle('on', ir); $('fIr').onclick = e => { e.preventDefault(); $('ficha').classList.remove('on'); irA(p.ir); };
+      $('ficha').classList.add('on');
+    };
+    $('marcas').appendChild(d);
+    p.w = C.Cartesian3.fromDegrees(p.lon, p.lat, G.H + p.z);
+    return d;
+  });
+  function ponerMarcas() {
+    const t = $('titulo').getBoundingClientRect(), m = $('mapa').getBoundingClientRect(), dirC = cam.directionWC, pc = cam.positionWC;
+    PUNTOS.forEach((p, i) => {
+      C.Cartesian3.subtract(p.w, pc, v3);
+      const z = C.Cartesian3.dot(v3, dirC), dist = C.Cartesian3.magnitude(v3);
+      const q = z > 5 && dist < 6000 ? C.SceneTransforms.worldToWindowCoordinates(scene, p.w, tmp) : null;
+      const dentro = !!q && q.x > 20 && q.x < innerWidth - 20 && q.y > 60 && q.y < innerHeight - 90 &&
+        !(q.x < t.right + 90 && q.y < t.bottom + 50) && !(q.x > m.left - 90 && q.x < m.right + 90 && q.y > m.top && q.y < m.bottom + 40);
+      pins[i].classList.toggle('oculto', !dentro);
+      if (q) { pins[i].style.left = q.x + 'px'; pins[i].style.top = q.y + 'px'; }
+    });
+  }
+
+  // ---- recorrido: avanzar hacia donde se mira ----
+  function haciaAdelante() {
+    const s2 = Math.min(PARADAS.length - 1, est + 1), s1 = Math.max(0, est - 1);
+    const DX = PARADAS[s2].X - PARADAS[s1].X, DY = PARADAS[s2].Y - PARADAS[s1].Y;
+    const a = 2 * Math.PI * pos / G.N; // la cámara mira hacia (-sen a, cos a) en X este / Y sur
+    return (-Math.sin(a) * DX + Math.cos(a) * DY) >= 0 ? 1 : -1;
+  }
+  function irA(s) {
+    s = Math.max(0, Math.min(PARADAS.length - 1, s));
+    if (s === est) return;
+    est = s;
+    vuelo = { de: { ...centro }, a: { lon: PARADAS[s].lon, lat: PARADAS[s].lat }, t0: performance.now(), dur: 1400 };
+    $('subtit').textContent = PARADAS[s].nombre + ' · Bogotá';
+    history.replaceState(null, '', s === 0 ? location.pathname : '?p=' + s);
+    $('ayuda').classList.remove('on'); pintarMapa();
+  }
+  const avanzar = sentido => irA(est + sentido * haciaAdelante());
+
+  // ---- minimapa (norte arriba) ----
+  function pintarMapa() {
+    const svg = $('mapaSvg'), W = 168, H = 112, pad = 22;
+    const xs = PARADAS.map(p => p.X), ys = PARADAS.map(p => p.Y);
+    const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+    const e = Math.min((W - 2 * pad) / (x1 - x0 || 1), (H - 2 * pad) / (y1 - y0 || 1));
+    const mx = (W - (x1 - x0) * e) / 2, my = (H - (y1 - y0) * e) / 2;
+    const P = (X, Y) => [mx + (X - x0) * e, my + (Y - y0) * e];
+    const cX = (centro.lon - PARADAS[0].lon) * MX, cY = -(centro.lat - PARADAS[0].lat) * MY;
+    const a = 2 * Math.PI * pos / G.N, c = P(cX, cY), dir = [-Math.sin(a), Math.cos(a)], ab = 0.62, L = 30;
+    const rot = (v, t) => [v[0] * Math.cos(t) - v[1] * Math.sin(t), v[0] * Math.sin(t) + v[1] * Math.cos(t)];
+    const i1 = rot(dir, -ab), i2 = rot(dir, ab);
+    let h = `<path d="M${c[0]} ${c[1]} L${c[0] + i1[0] * L} ${c[1] + i1[1] * L} A${L} ${L} 0 0 1 ${c[0] + i2[0] * L} ${c[1] + i2[1] * L} Z" fill="rgba(125,211,252,.28)"/>`;
+    h += `<polyline points="${PARADAS.map(p => P(p.X, p.Y).join(',')).join(' ')}" fill="none" stroke="rgba(226,243,255,.35)" stroke-width="2" stroke-dasharray="3 4"/>`;
+    PARADAS.forEach((p, s) => {
+      const q = P(p.X, p.Y), r = s === est ? 7 : p.fin ? 5.5 : 4;
+      h += `<circle data-s="${s}" cx="${q[0]}" cy="${q[1]}" r="${r + 9}" fill="transparent" style="cursor:pointer"/>`;
+      h += `<circle cx="${q[0]}" cy="${q[1]}" r="${r}" fill="${s === est ? '#7dd3fc' : p.fin ? '#34d399' : 'rgba(226,243,255,.75)'}" stroke="#06101a" stroke-width="2" pointer-events="none"/>`;
+    });
+    const a0 = P(PARADAS[0].X, PARADAS[0].Y), aN = P(PARADAS[PARADAS.length - 1].X, PARADAS[PARADAS.length - 1].Y);
+    h += `<text x="${a0[0] + 10}" y="${a0[1] + 4}" fill="#e2f3ff" font-size="10" font-weight="600">La Fontana</text>`;
+    h += `<text x="${aN[0] - 6}" y="${aN[1] + 16}" fill="#e2f3ff" font-size="10" font-weight="600" text-anchor="end">Usaquén</text>`;
+    h += `<text x="${W - 8}" y="14" fill="#94a3b8" font-size="9" text-anchor="end" font-weight="700">N ↑</text>`;
+    svg.innerHTML = h;
+  }
+  $('mapaSvg').addEventListener('click', e => { const s = e.target.getAttribute && e.target.getAttribute('data-s'); if (s !== null && s !== undefined) irA(+s); });
+
+  // ---- interacción (igual que el giro): de lado = girar; arriba/abajo, rueda o ↑ ↓ = recorrer ----
+  const vista = $('vista'), PX_POR_VISTA = () => Math.max(8, innerWidth / 90);
+  let y0 = 0, x0 = 0, saltoHecho = false;
+  const pararAuto = () => { auto = false; $('bAuto').classList.remove('on'); };
+  vista.addEventListener('pointerdown', e => { arrastre = { x: e.clientX, p: pos }; x0 = e.clientX; y0 = e.clientY; saltoHecho = false; ultimoX = e.clientX; ultimoT = performance.now(); vel = 0; giroBtn = null; pararAuto(); vista.classList.add('arrastrando'); vista.setPointerCapture(e.pointerId); $('ayuda').classList.remove('on'); });
+  vista.addEventListener('pointermove', e => {
+    if (!arrastre) return;
+    const dyT = e.clientY - y0, dxT = e.clientX - x0;
+    if (!saltoHecho && Math.abs(dyT) > 80 && Math.abs(dyT) > Math.abs(dxT) * 1.6) { saltoHecho = true; avanzar(dyT > 0 ? 1 : -1); return; }
+    if (saltoHecho) return;
+    const t = performance.now(), dx = e.clientX - ultimoX;
+    vel = 0.8 * vel + 0.2 * (-dx / PX_POR_VISTA()) / Math.max(1, t - ultimoT) * 16;
+    ultimoX = e.clientX; ultimoT = t;
+    pos = arrastre.p - (e.clientX - arrastre.x) / PX_POR_VISTA();
+  });
+  const soltar = () => { if (!arrastre) return; arrastre = null; if (saltoHecho) vel = 0; vista.classList.remove('arrastrando'); };
+  vista.addEventListener('pointerup', soltar); vista.addEventListener('pointercancel', soltar);
+  let ruedaT = 0;
+  vista.addEventListener('wheel', e => {
+    pararAuto();
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) { pos += Math.sign(e.deltaX); return; }
+    const t = performance.now(); if (t - ruedaT < 450) return; ruedaT = t;
+    avanzar(e.deltaY < 0 ? 1 : -1);
+  }, { passive: true });
+  const girar = d => { pararAuto(); vel = 0; giroBtn = { ini: pos, fin: Math.round(pos) + d, t0: performance.now() }; };
+  $('bIzq').onclick = () => girar(-3); $('bDer').onclick = () => girar(3);
+  $('bAdelante').onclick = () => avanzar(1); $('bAtras').onclick = () => avanzar(-1);
+  $('bAuto').onclick = () => { auto = !auto; $('bAuto').classList.toggle('on', auto); };
+  $('bMaqueta').onclick = e => { e.preventDefault(); irA(est === 0 ? 1 : 0); };
+  $('fCerrar').onclick = () => $('ficha').classList.remove('on');
+  addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft') pos -= 1; if (e.key === 'ArrowRight') pos += 1;
+    if (e.key === 'ArrowUp' || e.key === 'w') avanzar(1); if (e.key === 'ArrowDown' || e.key === 's') avanzar(-1);
+    if (e.key === 'Escape') $('ficha').classList.remove('on');
+  });
+  $('subtit').textContent = PARADAS[est].nombre + ' · Bogotá';
+
+  // ---- bucle ----
+  const suave = k => k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+  let gradosPrev = -1;
+  scene.preUpdate.addEventListener(() => {
+    const now = performance.now();
+    if (giroBtn) { const k = Math.min(1, (now - giroBtn.t0) / 450); pos = giroBtn.ini + (giroBtn.fin - giroBtn.ini) * suave(k); if (k >= 1) giroBtn = null; }
+    else if (!arrastre) { if (auto) pos += 0.06; else { pos += vel; vel *= 0.93; if (Math.abs(vel) < 0.005) vel = 0; } }
+    if (vuelo) {
+      const k = Math.min(1, (now - vuelo.t0) / vuelo.dur), s = suave(k);
+      centro = { lon: vuelo.de.lon + (vuelo.a.lon - vuelo.de.lon) * s, lat: vuelo.de.lat + (vuelo.a.lat - vuelo.de.lat) * s };
+      if (k >= 1) vuelo = null;
+      pintarMapa();
+    }
+    ponerCamara();
+  });
+  scene.postRender.addEventListener(() => {
+    ponerMarcas();
+    const g = Math.round(actual() * 360 / G.N);
+    if (g !== gradosPrev) { gradosPrev = g; $('grados').textContent = g + '°'; pintarMapa(); }
+  });
+
+  // ---- apertura: espera a que la ciudad cargue en la vista inicial ----
+  ponerCamara(); pintarMapa();
+  let abierta = false, maxP = 1;
+  const abrir = () => {
+    if (abierta) return; abierta = true;
+    $('carga').classList.add('fuera');
+    setTimeout(() => $('ayuda').classList.add('on'), 700); setTimeout(() => $('ayuda').classList.remove('on'), 7500);
+  };
+  const t0 = performance.now();
+  const vigilar = () => {
+    if (abierta) return;
+    maxP = Math.max(maxP, pendientes);
+    const hecho = tiles ? Math.max(0, Math.min(1, 1 - pendientes / maxP)) : 0, seg = (performance.now() - t0) / 1000;
+    const pct = Math.max(4, Math.min(100, Math.max(hecho * 100, seg * 5)));
+    $('cargaBarra').style.width = pct + '%';
+    if (tiles) $('cargaTxt').textContent = 'Cargando vistas · ' + Math.round(pct) + '%';
+    if (tiles && ((tiles.tilesLoaded && seg > 2.5) || seg > 20)) { $('cargaBarra').style.width = '100%'; setTimeout(abrir, 250); return; }
+    setTimeout(vigilar, 200);
+  };
+  vigilar();
+  window.viewer = viewer;
+})();
+</script>
+</body>
+</html>
