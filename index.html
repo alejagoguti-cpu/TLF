@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Hotel La Fontana 360</title>
-<meta name="description" content="Recorrido fotorrealista del Hotel La Fontana, Unicentro y Usaquén (Bogotá)">
+<meta name="description" content="Giro fotorrealista interactivo del Hotel La Fontana, Bogotá">
 <link rel="icon" href="data:,">
 <style>
   :root{--fondo:#060b12;--panel:rgba(8,16,26,.72);--borde:rgba(125,211,252,.22);--texto:#e2f3ff;--suave:#94a3b8;--acento:#7dd3fc;--verde:#34d399}
@@ -32,12 +32,6 @@
   /* interfaz */
   .chip{position:fixed;z-index:10;display:flex;align-items:center;gap:10px;padding:9px 13px;border-radius:12px;background:var(--panel);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid var(--borde)}
   #titulo{top:14px;left:14px}
-  #mapa{position:fixed;z-index:10;right:14px;bottom:max(18px,env(safe-area-inset-bottom));width:184px;padding:8px 8px 6px;border-radius:14px;background:var(--panel);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid var(--borde)}
-  #mapa b{display:block;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--acento);margin:0 0 2px 4px}
-  #mapa svg{display:block;width:168px;height:112px}
-  #mapa small{display:block;font-size:10px;color:var(--suave);margin:2px 4px 0}
-  #fIr{display:none;margin-top:14px;height:40px;width:100%;text-decoration:none}
-  #fIr.on{display:inline-flex}
   #titulo b{font-size:13px;letter-spacing:.04em}
   #titulo small{display:block;font-size:11px;color:var(--suave);margin-top:2px}
   #barraInf{position:fixed;z-index:10;left:50%;bottom:max(18px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;gap:8px;align-items:center}
@@ -50,9 +44,6 @@
   #ayuda{position:fixed;z-index:10;left:50%;bottom:84px;transform:translateX(-50%);display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;background:var(--panel);font-size:12px;color:#cfe7f7;opacity:0;transition:opacity .6s;pointer-events:none;white-space:nowrap}
   #ayuda.on{opacity:1}
   #atrib a{color:var(--acento)}
-  .pin .et .p360{font-size:9px;font-weight:800;letter-spacing:.06em;padding:2px 5px;border-radius:6px;color:#04121c;background:linear-gradient(100deg,#7dd3fc,#34d399);text-decoration:none}
-  #fPano{display:none;margin-top:8px;height:40px;width:100%;text-decoration:none}
-  #fPano.on{display:inline-flex}
   #atrib{position:fixed;z-index:9;left:10px;bottom:6px;font-size:10px;color:#e8eef7;opacity:.85;text-shadow:0 1px 2px #000;max-width:60vw}
   /* marcadores */
   #marcas{position:fixed;inset:0;z-index:8;pointer-events:none}
@@ -66,7 +57,7 @@
   #ficha h2{font-size:18px;margin-bottom:6px}
   #ficha p{font-size:13px;color:var(--suave);line-height:1.5}
   #ficha .cerrar{position:absolute;right:10px;top:10px;width:30px;height:30px}
-  @media(max-width:700px){#bAuto{display:none}#mapa{top:66px;bottom:auto;right:10px;width:150px;padding:6px}#mapa svg{width:136px;height:91px}#mapa small{display:none}#titulo small{display:none}.btn{height:42px;padding:0 12px;font-size:11px;letter-spacing:.08em}.btn.redondo{width:42px}#ayuda{bottom:76px;font-size:11px}#grados{display:none}.btn .txt{display:none}.btn.principal .txt{display:inline}#atrib{bottom:auto;top:70px;left:16px;max-width:calc(100vw - 190px)}}
+  @media(max-width:700px){#bAuto{display:none}#titulo small{display:none}.btn{height:42px;padding:0 12px;font-size:11px;letter-spacing:.08em}.btn.redondo{width:42px}#ayuda{bottom:76px;font-size:11px}#grados{display:none}.btn .txt{display:none}#atrib{bottom:auto;top:70px;left:16px;max-width:calc(100vw - 32px)}}
 </style>
 </head>
 <body>
@@ -78,98 +69,77 @@
   <div class="tarjeta">
     <div class="marca"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="m3 7 9 5 9-5"/><path d="M12 12v10"/></svg><span>REN3D</span></div>
     <h1>Hotel La Fontana <span>360</span></h1>
-    <p id="cargaSub">Recorrido fotorrealista entre el Hotel La Fontana, Unicentro y Usaquén · Bogotá</p>
+    <p id="cargaSub">Hotel Estelar La Fontana · Bogotá</p>
     <div class="barra"><i id="cargaBarra"></i></div>
     <div id="cargaTxt">Cargando vistas…</div>
   </div>
 </div>
 
 <div class="chip" id="titulo"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--acento)"><path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="m3 7 9 5 9-5"/><path d="M12 12v10"/></svg><div><b>Hotel La Fontana 360</b><small id="subtit">Hotel La Fontana · Bogotá</small></div></div>
-<div id="mapa"><b>Recorrido</b><svg id="mapaSvg" viewBox="0 0 168 112" aria-label="Paradas del recorrido entre La Fontana y Usaquén"></svg><small>Toca una parada o usa ↑ ↓</small></div>
 <div class="chip" id="grados">0°</div>
 
 <div id="barraInf">
   <button class="btn redondo" id="bIzq" aria-label="Girar a la izquierda"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
-  <button class="btn redondo" id="bAtras" aria-label="Retroceder"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg></button>
-  <button class="btn redondo" id="bAdelante" aria-label="Avanzar hacia donde miras"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg></button>
   <button class="btn" id="bAuto" aria-label="Giro automático"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg><span class="txt">Girar</span></button>
   <button class="btn redondo" id="bDer" aria-label="Girar a la derecha"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
-  <a class="btn principal" id="bMaqueta" href="https://alejagoguti-cpu.github.io/TLF-360/?p=pano_fontana"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="m3 7 9 5 9-5"/><path d="M12 12v10"/></svg><span class="txt">Vista 360°</span></a>
 </div>
-<div id="ayuda"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-4 0v5"/><path d="M14 10V4a2 2 0 0 0-4 0v6"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.9-6-2.4l-3.6-3.6a2 2 0 0 1 2.8-2.8L7 15"/></svg><span>Arrastra de lado para girar · arriba/abajo o ↑ ↓ para recorrer</span></div>
-<div id="ficha"><button class="btn redondo cerrar" id="fCerrar" aria-label="Cerrar">✕</button><h2 id="fTit"></h2><p id="fTxt"></p><a class="btn principal" id="fIr" href="#"><span class="txt">Ir a esta parada</span></a><a class="btn" id="fPano" href="#"><span class="txt">Ver en 360°</span></a></div>
+<div id="ayuda"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-4 0v5"/><path d="M14 10V4a2 2 0 0 0-4 0v6"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.9-6-2.4l-3.6-3.6a2 2 0 0 1 2.8-2.8L7 15"/></svg><span>Arrastra de lado para girar</span></div>
+<div id="ficha"><button class="btn redondo cerrar" id="fCerrar" aria-label="Cerrar">✕</button><h2 id="fTit"></h2><p id="fTxt"></p></div>
 <div id="atrib">Imágenes 3D: Google · Render: Unreal Engine + Cesium · <a id="vivo" href="./maqueta.html">3D en vivo</a></div>
 
 <script>
 (function () {
   'use strict';
   // ---- datos del giro (LaFontana360/01_config/render_giro.py, Unreal + Cesium) ----
-  // dron a 260 m, órbita de 650 m, lente de 20 mm; una órbita de 72 vistas en cada PARADA del recorrido La Fontana -> Usaquén
-  const G = { N: 72, RADIO: 650, ALTO: 260, OBJ_Z: 25, FOCAL: 20, SENSOR_W: 36, ASPECTO: 16 / 9, LAT: 4.704706, LON: -74.043673, CX: 0, CY: 0 };
+  // dron a 260 m, órbita de 650 m, lente de 20 mm; órbita de 72 vistas en Hotel La Fontana
+  const G = { N: 72, RADIO: 650, ALTO: 260, OBJ_Z: 25, FOCAL: 20, SENSOR_W: 36, ASPECTO: 16 / 9, LAT: 4.704706, LON: -74.043673 };
   const MXg = 111320 * Math.cos(4.7 * Math.PI / 180), MYg = 110540;
-  const XY = (lat, lon) => ({ CX: (lon - G.LON) * MXg, CY: -(lat - G.LAT) * MYg }); // m, X este, Y sur desde La Fontana
-  const PANO = 'https://alejagoguti-cpu.github.io/TLF-360/?p=';
-  const PARADAS = [
-    Object.assign({ dir: 'giro', nombre: 'Hotel La Fontana' }, XY(4.704706, -74.043673)),
-    Object.assign({ dir: 'giro_corredor/p1', nombre: 'Unicentro' }, XY(4.70208, -74.04145)),
-    Object.assign({ dir: 'giro_corredor/p2', nombre: 'Recorrido Unicentro – Usaquén' }, XY(4.69850, -74.03610)),
-    Object.assign({ dir: 'giro_usaquen', nombre: 'Usaquén' }, XY(4.69490, -74.03070))
-  ].map(p => Object.assign(p, { chicas: new Array(72), grandes: new Array(72), ok: false, pedida: false }));
-  const ULT = PARADAS.length - 1, VX = PARADAS[ULT].CX, VY = PARADAS[ULT].CY;
-  const qs = new URLSearchParams(location.search);
-  let est = Math.max(0, Math.min(ULT, +qs.get('p') || 0));
-  G.CX = PARADAS[est].CX; G.CY = PARADAS[est].CY;
-  // puntos del territorio (lat, lng reales; alto de la etiqueta en m); pano = panorámica 360° en la Página 2
+
+  const chicas = new Array(72), grandes = new Array(72);
+  let ok = false;
+
+  // puntos del territorio (lat, lng reales; alto de la etiqueta en m)
   const PUNTOS = [
-    { n: 'Hotel La Fontana', lat: 4.704706, lng: -74.043673, z: 35, ir: 0, pano: 'pano_fontana', d: 'Hotel Estelar La Fontana (Calle 127 # 15A-10): edificio en ladrillo de planta en estrella, frente a Unicentro.' },
-    { n: 'Unicentro', lat: 4.70208, lng: -74.04145, z: 25, ir: 1, pano: 'pano_unicentro', d: 'Centro comercial Unicentro (1976), uno de los primeros grandes centros comerciales de Bogotá.' },
-    { n: 'Usaquén', lat: 4.6949, lng: -74.0307, z: 20, ir: 3, pano: 'pano_usaquen', d: 'Centro fundacional de Usaquén: plaza, iglesia y calles coloniales al pie de los cerros.' },
+    { n: 'Hotel La Fontana', lat: 4.704706, lng: -74.043673, z: 35, d: 'Hotel Estelar La Fontana (Calle 127 # 15A-10): edificio en ladrillo de planta en estrella, frente a Unicentro.' },
+    { n: 'Unicentro', lat: 4.70208, lng: -74.04145, z: 25, d: 'Centro comercial Unicentro (1976), uno de los primeros grandes centros comerciales de Bogotá.' },
+    { n: 'Usaquén', lat: 4.6949, lng: -74.0307, z: 20, d: 'Centro fundacional de Usaquén: plaza, iglesia y calles coloniales al pie de los cerros.' },
     { n: 'Hacienda Santa Bárbara', lat: 4.6972, lng: -74.0321, z: 20, d: 'Centro comercial en la antigua casa de la hacienda Santa Bárbara.' },
     { n: 'Parque de la 93', lat: 4.6765, lng: -74.0483, z: 15, d: 'Parque urbano rodeado de restaurantes, en Chicó.' },
     { n: 'Autopista Norte', lat: 4.7040, lng: -74.0525, z: 15, d: 'Eje vial y troncal de TransMilenio hacia el norte de la ciudad.' },
     { n: 'Cerros Orientales', lat: 4.7050, lng: -74.0225, z: 350, d: 'Reserva forestal que limita la ciudad por el oriente.' }
   ];
+
   const $ = id => document.getElementById(id);
   const cv = $('lienzo'), ctx = cv.getContext('2d');
   let actual = 0, pos = 0, vel = 0, auto = false, arrastre = null, ultimoX = 0, ultimoT = 0, dirty = true;
-  const nombre = (s, pref, i) => PARADAS[s].dir + '/' + pref + '_' + String(i).padStart(3, '0') + '.webp';
+  const nombre = (pref, i) => 'giro/' + pref + '_' + String(i).padStart(3, '0') + '.webp';
   const cargar = (url) => new Promise(r => { const im = new Image(); im.decoding = 'async'; im.onload = () => r(im); im.onerror = () => r(null); im.src = url; });
-  const orden = (c) => { const o = []; for (let d = 0; d < G.N; d++) o.push(((d % 2 ? c - Math.ceil(d / 2) : c + d / 2) % G.N + G.N) % G.N); return o; }; // alrededor del ángulo c
+  const orden = (c) => { const o = []; for (let d = 0; d < G.N; d++) o.push(((d % 2 ? c - Math.ceil(d / 2) : c + d / 2) % G.N + G.N) % G.N); return o; };
 
-  // ---- carga: las vistas livianas de la parada (primero alrededor del ángulo actual), luego la de alta del ángulo quieto ----
-  async function cargarParada(s, alAbrir) {
-    const P = PARADAS[s]; if (P.pedida) return; P.pedida = true;
+  // ---- carga: vistas livianas alrededor del ángulo actual, luego alta quieta ----
+  async function cargarVistas(alAbrir) {
     const o = orden(actual), PRIMERAS = 13; let hechas = 0;
     const una = async (i) => {
-      const im = await cargar(nombre(s, 's', i)); P.chicas[i] = im; hechas++;
-      if (im && !P.ok) { P.ok = true; pintarMapa(); }
-      if (s === est) dirty = true;
+      const im = await cargar(nombre('s', i)); chicas[i] = im; hechas++;
+      if (im && !ok) ok = true;
+      dirty = true;
       if (alAbrir) alAbrir(Math.min(hechas, PRIMERAS), PRIMERAS);
     };
     await Promise.all(o.slice(0, PRIMERAS).map(una));
     for (let k = PRIMERAS; k < o.length; k += 6) await Promise.all(o.slice(k, k + 6).map(una));
   }
-  // las paradas vecinas se precargan (solo cuando la actual terminó), para que avanzar sea inmediato
-  async function precargar() {
-    for (const d of [1, -1, 2, -2, 3, -3, 4, -4]) { const s = est + d; if (s >= 0 && s < PARADAS.length) await cargarParada(s); }
-  }
-  // libera las paradas lejanas (celulares con poca memoria)
-  function liberar() {
-    PARADAS.forEach((P, s) => { if (Math.abs(s - est) > 2 && P.pedida) { P.chicas = new Array(72); P.grandes = new Array(72); P.pedida = false; } });
-  }
-  function cercana(s, i) {
-    const C = PARADAS[s].chicas;
-    for (let d = 0; d < G.N; d++) { const a = C[(i + d) % G.N] || C[(i - d + G.N) % G.N]; if (a) return a; }
+
+  function cercana(i) {
+    for (let d = 0; d < G.N; d++) { const a = chicas[(i + d) % G.N] || chicas[(i - d + G.N) % G.N]; if (a) return a; }
     return null;
   }
   function pedirGrande(i) {
-    const P = PARADAS[est], s = est;
-    if (P.grandes[i] !== undefined) return; P.grandes[i] = null;
-    cargar(nombre(s, 'f', i)).then(im => { P.grandes[i] = im; if (est === s && actual === i) dirty = true; });
+    if (grandes[i] !== undefined) return; grandes[i] = null;
+    cargar(nombre('f', i)).then(im => { grandes[i] = im; if (actual === i) dirty = true; });
   }
 
-  // ---- dibujo: imagen ajustada a la pantalla ("cover"), con fundido al cambiar de parada ----
-  let encuadre = { s: 1, ox: 0, oy: 0, w: 1, h: 1 }, previa = null, fundido = 0, ultima = null;
+  // ---- dibujo: imagen ajustada a la pantalla ("cover") ----
+  let encuadre = { s: 1, ox: 0, oy: 0, w: 1, h: 1 };
   function tam() {
     const dpr = Math.min(devicePixelRatio || 1, 2);
     cv.width = Math.round(innerWidth * dpr); cv.height = Math.round(innerHeight * dpr); dirty = true;
@@ -181,31 +151,26 @@
     return { ox, oy, w, h };
   }
   function dibujar() {
-    const P = PARADAS[est], movil = arrastre || Math.abs(vel) > 0.02 || auto;
-    const im = movil ? (P.chicas[actual] || P.grandes[actual] || cercana(est, actual)) : (P.grandes[actual] || P.chicas[actual] || cercana(est, actual));
-    if (!im) { if (previa) cubrir(previa, 1); return; }
+    const movil = arrastre || Math.abs(vel) > 0.02 || auto;
+    const im = movil ? (chicas[actual] || grandes[actual] || cercana(actual)) : (grandes[actual] || chicas[actual] || cercana(actual));
+    if (!im) return;
     ctx.imageSmoothingQuality = 'high';
     const r = cubrir(im, 1);
-    if (previa) { const k = Math.min(1, (performance.now() - fundido) / 450); if (k < 1) { cubrir(previa, 1 - k); dirty = true; } else previa = null; }
-    ultima = im;
     const dpr = cv.width / innerWidth; encuadre = { ox: r.ox / dpr, oy: r.oy / dpr, w: r.w / dpr, h: r.h / dpr };
-    ponerMarcas(); pintarMapa(); GIRO.v++;
+    ponerMarcas(); GIRO.v++;
     $('grados').textContent = Math.round(actual * 360 / G.N) + '°';
   }
 
   // ---- marcadores: misma cámara que el render ----
   const pins = PUNTOS.map(p => {
     const d = document.createElement('div'); d.className = 'pin';
-    d.innerHTML = '<div class="et"><i></i>' + p.n + (p.pano ? ' <a class="p360" href="' + PANO + p.pano + '" title="Ver panorámica 360°">360°</a>' : '') + '</div><div class="palo"></div>';
-    if (p.pano) d.querySelector('.p360').onclick = (e) => e.stopPropagation();
+    d.innerHTML = '<div class="et"><i></i>' + p.n + '</div><div class="palo"></div>';
     d.querySelector('.et').onclick = () => {
       $('fTit').textContent = p.n; $('fTxt').textContent = p.d;
-      const ir = p.ir !== undefined && p.ir !== est && PARADAS[p.ir].ok;
-      $('fIr').classList.toggle('on', ir); $('fPano').classList.toggle('on', !!p.pano); if (p.pano) $('fPano').href = PANO + p.pano; $('fIr').onclick = (e) => { e.preventDefault(); $('ficha').classList.remove('on'); irA(p.ir); };
       $('ficha').classList.add('on');
     };
     $('marcas').appendChild(d);
-    p.X = (p.lng - G.LON) * MXg; p.Y = -(p.lat - G.LAT) * MYg; // Unreal con Cesium: X = este, Y = sur, Z = arriba
+    p.X = (p.lng - G.LON) * MXg; p.Y = -(p.lat - G.LAT) * MYg;
     return d;
   });
   function camara() {
@@ -216,104 +181,53 @@
     return { cx, cy, cz, fx, fy, fz, rx, ry, ux: ux / ul, uy: uy / ul, uz: uz / ul, th, tv: th / G.ASPECTO };
   }
   function proyectar(k, X, Y, Z) {
-    const dx = X - G.CX - k.cx, dy = Y - G.CY - k.cy, dz = Z - k.cz, z = dx * k.fx + dy * k.fy + dz * k.fz;
+    const dx = X - k.cx, dy = Y - k.cy, dz = Z - k.cz, z = dx * k.fx + dy * k.fy + dz * k.fz;
     if (z < 5) return null;
     const u = 0.5 + (dx * k.rx + dy * k.ry) / z / (2 * k.th), v = 0.5 - (dx * k.ux + dy * k.uy + dz * k.uz) / z / (2 * k.tv);
     return [encuadre.ox + u * encuadre.w, encuadre.oy + v * encuadre.h, z];
   }
   function ponerMarcas() {
-    const k = camara(), t = $('titulo').getBoundingClientRect(), m = $('mapa').getBoundingClientRect();
+    const k = camara(), t = $('titulo').getBoundingClientRect();
     PUNTOS.forEach((p, i) => {
       const q = proyectar(k, p.X, p.Y, p.z);
       const dentro = !!q && q[0] > 20 && q[0] < innerWidth - 20 && q[1] > 60 && q[1] < innerHeight - 90 &&
-        !(q[0] < t.right + 90 && q[1] < t.bottom + 50) && !(q[0] > m.left - 90 && q[0] < m.right + 90 && q[1] > m.top && q[1] < m.bottom + 40);
+        !(q[0] < t.right + 90 && q[1] < t.bottom + 50);
       pins[i].classList.toggle('oculto', !dentro);
       if (q) { pins[i].style.left = q[0] + 'px'; pins[i].style.top = q[1] + 'px'; }
     });
   }
-  // cámara del render para otras capas: proyecta un punto X este, Y sur, Z arriba (m) a la pantalla
-  const GIRO = window.GIRO = { v: 0, get i() { return actual; }, get N() { return G.N; }, get parada() { return est; }, proyectar: (X, Y, Z) => proyectar(camara(), X, Y, Z) };
+  const GIRO = window.GIRO = { v: 0, get i() { return actual; }, get N() { return G.N; }, proyectar: (X, Y, Z) => proyectar(camara(), X, Y, Z) };
 
-  // ---- recorrido: avanzar hacia donde se mira ----
-  const LD = Math.hypot(VX, VY), DX = VX / LD, DY = VY / LD;
-  function haciaAdelante() { const a = 2 * Math.PI * actual / G.N; return (-Math.sin(a) * DX + Math.cos(a) * DY) >= 0 ? 1 : -1; } // la cámara mira hacia (-sen a, cos a)
-  function irA(s) {
-    s = Math.max(0, Math.min(PARADAS.length - 1, s));
-    if (s === est) return;
-    if (!PARADAS[s].ok && PARADAS[s].pedida) { // aún sin vistas: se salta a la siguiente disponible
-      const d = Math.sign(s - est); let n = s; while (n > 0 && n < PARADAS.length - 1 && !PARADAS[n].ok) n += d; s = n;
-    }
-    previa = ultima; fundido = performance.now();
-    est = s; G.CX = PARADAS[s].CX; G.CY = PARADAS[s].CY;
-    cargarParada(s).then(precargar); liberar();
-    $('subtit').textContent = PARADAS[s].nombre + ' · Bogotá';
-    history.replaceState(null, '', s === 0 ? location.pathname : '?p=' + s);
-    $('ayuda').classList.remove('on'); quieto = 0; dirty = true; pintarMapa();
-  }
-  const avanzar = (sentido) => irA(est + sentido * haciaAdelante());
-
-  // ---- minimapa del recorrido (norte arriba): paradas, posición y hacia dónde se mira ----
-  function pintarMapa() {
-    const svg = $('mapaSvg'); if (!svg) return;
-    const W = 168, H = 112, pad = 22;
-    const xs = PARADAS.map(p => p.CX), ys = PARADAS.map(p => p.CY);
-    const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
-    const e = Math.min((W - 2 * pad) / (x1 - x0 || 1), (H - 2 * pad) / (y1 - y0 || 1));
-    const mx = (W - (x1 - x0) * e) / 2, my = (H - (y1 - y0) * e) / 2;
-    const P = (X, Y) => [mx + (X - x0) * e, my + (Y - y0) * e]; // Y sur hacia abajo = norte arriba
-    const a = 2 * Math.PI * actual / G.N, c = P(PARADAS[est].CX, PARADAS[est].CY);
-    const dir = [-Math.sin(a), Math.cos(a)], ab = 0.62, L = 30;
-    const rot = (v, t) => [v[0] * Math.cos(t) - v[1] * Math.sin(t), v[0] * Math.sin(t) + v[1] * Math.cos(t)];
-    const i1 = rot(dir, -ab), i2 = rot(dir, ab);
-    let h = `<path d="M${c[0]} ${c[1]} L${c[0] + i1[0] * L} ${c[1] + i1[1] * L} A${L} ${L} 0 0 1 ${c[0] + i2[0] * L} ${c[1] + i2[1] * L} Z" fill="rgba(125,211,252,.28)"/>`;
-    const a0 = P(PARADAS[0].CX, PARADAS[0].CY), a4 = P(PARADAS[ULT].CX, PARADAS[ULT].CY);
-    h += `<polyline points="${PARADAS.map(p => P(p.CX, p.CY).join(",")).join(" ")}" fill="none" stroke="rgba(226,243,255,.35)" stroke-width="2" stroke-dasharray="3 4"/>`;
-    PARADAS.forEach((p, s) => {
-      const q = P(p.CX, p.CY), hum = s === 0 || s === ULT, r = s === est ? 7 : hum ? 5.5 : 4;
-      h += `<circle data-s="${s}" cx="${q[0]}" cy="${q[1]}" r="${r + 9}" fill="transparent" style="cursor:pointer"/>`;
-      h += `<circle cx="${q[0]}" cy="${q[1]}" r="${r}" fill="${s === est ? '#7dd3fc' : hum ? '#34d399' : 'rgba(226,243,255,.75)'}" stroke="#06101a" stroke-width="2" opacity="${p.ok || s === est ? 1 : .35}" pointer-events="none"/>`;
-    });
-    h += `<text x="${a0[0] + 10}" y="${a0[1] + 4}" fill="#e2f3ff" font-size="10" font-weight="600">La Fontana</text>`;
-    h += `<text x="${a4[0] + 4}" y="${a4[1] + 16}" fill="#e2f3ff" font-size="10" font-weight="600" text-anchor="end">Usaquén</text>`;
-    h += `<text x="${W - 8}" y="14" fill="#94a3b8" font-size="9" text-anchor="end" font-weight="700">N ↑</text>`;
-    svg.innerHTML = h;
-  }
-  $('mapaSvg').addEventListener('click', e => { const s = e.target.getAttribute && e.target.getAttribute('data-s'); if (s !== null && s !== undefined) irA(+s); });
-
-  // ---- interacción: arrastrar de lado = girar; arrastrar arriba/abajo, rueda o ↑ ↓ = avanzar / retroceder ----
+  // ---- interacción: arrastrar de lado = girar ----
   const vista = $('vista'), PX_POR_VISTA = () => Math.max(8, innerWidth / 90);
-  let y0 = 0, x0 = 0, saltoHecho = false;
-  vista.addEventListener('pointerdown', e => { arrastre = { x: e.clientX, p: pos }; x0 = e.clientX; y0 = e.clientY; saltoHecho = false; ultimoX = e.clientX; ultimoT = performance.now(); vel = 0; auto = false; $('bAuto').classList.remove('on'); vista.classList.add('arrastrando'); vista.setPointerCapture(e.pointerId); $('ayuda').classList.remove('on'); });
+  vista.addEventListener('pointerdown', e => {
+    arrastre = { x: e.clientX, p: pos }; ultimoX = e.clientX; ultimoT = performance.now(); vel = 0; auto = false;
+    $('bAuto').classList.remove('on'); vista.classList.add('arrastrando'); vista.setPointerCapture(e.pointerId);
+    $('ayuda').classList.remove('on');
+  });
   vista.addEventListener('pointermove', e => {
     if (!arrastre) return;
-    const dyT = e.clientY - y0, dxT = e.clientX - x0;
-    if (!saltoHecho && Math.abs(dyT) > 80 && Math.abs(dyT) > Math.abs(dxT) * 1.6) { saltoHecho = true; avanzar(dyT > 0 ? 1 : -1); return; } // arrastrar hacia abajo = acercarse a lo que se mira
-    if (saltoHecho) return;
     const t = performance.now(), dx = e.clientX - ultimoX;
     vel = 0.8 * vel + 0.2 * (-dx / PX_POR_VISTA()) / Math.max(1, t - ultimoT) * 16;
     ultimoX = e.clientX; ultimoT = t;
     pos = arrastre.p - (e.clientX - arrastre.x) / PX_POR_VISTA();
   });
-  const soltar = () => { if (!arrastre) return; arrastre = null; if (saltoHecho) vel = 0; vista.classList.remove('arrastrando'); dirty = true; };
+  const soltar = () => { if (!arrastre) return; arrastre = null; vista.classList.remove('arrastrando'); dirty = true; };
   vista.addEventListener('pointerup', soltar); vista.addEventListener('pointercancel', soltar);
-  let ruedaT = 0;
+
   vista.addEventListener('wheel', e => {
     auto = false; $('bAuto').classList.remove('on');
-    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) { pos += Math.sign(e.deltaX); return; }
-    const t = performance.now(); if (t - ruedaT < 450) return; ruedaT = t;
-    avanzar(e.deltaY < 0 ? 1 : -1); // rueda hacia adelante = avanzar
+    pos += Math.sign(e.deltaX || e.deltaY);
   }, { passive: true });
+
   $('bIzq').onclick = () => { pos -= 3; }; $('bDer').onclick = () => { pos += 3; };
-  $('bAdelante').onclick = () => avanzar(1); $('bAtras').onclick = () => avanzar(-1);
   $('bAuto').onclick = () => { auto = !auto; $('bAuto').classList.toggle('on', auto); };
   $('fCerrar').onclick = () => $('ficha').classList.remove('on');
   addEventListener('keydown', e => {
     if (e.key === 'ArrowLeft') pos -= 1; if (e.key === 'ArrowRight') pos += 1;
-    if (e.key === 'ArrowUp' || e.key === 'w') avanzar(1); if (e.key === 'ArrowDown' || e.key === 's') avanzar(-1);
     if (e.key === 'Escape') $('ficha').classList.remove('on');
   });
   addEventListener('resize', tam);
-  $('subtit').textContent = PARADAS[est].nombre + ' · Bogotá';
 
   let quieto = 0;
   function bucle() {
@@ -324,6 +238,7 @@
     if (dirty) { dirty = false; dibujar(); }
     requestAnimationFrame(bucle);
   }
+
   // apertura
   let abierta = false;
   const abrir = () => {
@@ -332,11 +247,11 @@
     setTimeout(() => $('ayuda').classList.add('on'), 700); setTimeout(() => $('ayuda').classList.remove('on'), 7500);
     pedirGrande(actual);
   };
-  tam(); pintarMapa();
-  cargarParada(est, (n, de) => {
+  tam();
+  cargarVistas((n, de) => {
     $('cargaBarra').style.width = Math.max(4, n / de * 100) + '%'; $('cargaTxt').textContent = 'Cargando vistas · ' + n + ' de ' + de;
     if (n >= de) abrir();
-  }).then(() => { abrir(); precargar(); });
+  }).then(abrir);
   requestAnimationFrame(bucle);
 })();
 </script>
