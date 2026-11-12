@@ -64,6 +64,15 @@
   #vista .cesium-viewer-bottom,#vista .cesium-widget-credits{display:none!important}
   #vista canvas{filter:contrast(1.06) saturate(1.12)}
   #grade{position:fixed;inset:0;z-index:5;pointer-events:none;background:radial-gradient(ellipse at 50% 45%,transparent 58%,rgba(2,6,14,.36) 100%)}
+  /* recorrido cinematográfico y vistas */
+  #vistas{position:fixed;z-index:10;right:14px;top:58px;display:flex;flex-direction:column;gap:6px;align-items:stretch}
+  #vistas .btn{height:36px;padding:0 12px;font-size:10.5px;letter-spacing:.12em;justify-content:flex-start}
+  #vistas .sep{height:1px;margin:2px 4px;background:var(--borde)}
+  #escena{top:auto;left:14px;bottom:max(18px,env(safe-area-inset-bottom));opacity:0;transition:opacity .5s;pointer-events:none}
+  #escena.on{opacity:1}
+  #escena b{font:600 11px/1 ui-monospace,monospace;color:var(--acento)}
+  #escena span{font-size:12px;letter-spacing:.04em}
+  @media(max-width:700px){#vistas{top:auto;right:0;left:0;bottom:calc(max(18px,env(safe-area-inset-bottom)) + 52px);flex-direction:row;overflow-x:auto;padding:0 12px;scrollbar-width:none}#vistas .btn{flex:none}#vistas .sep{width:1px;height:auto;margin:6px 2px}#escena{bottom:auto;top:96px}#ayuda{bottom:128px}}
 </style>
 </head>
 <body>
@@ -91,6 +100,18 @@
   <button class="btn redondo" id="bDer" aria-label="Girar a la derecha"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
 </div>
 <div id="ayuda"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-4 0v5"/><path d="M14 10V4a2 2 0 0 0-4 0v6"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.9-6-2.4l-3.6-3.6a2 2 0 0 1 2.8-2.8L7 15"/></svg><span>Arrastra de lado para girar</span></div>
+<div id="vistas" aria-label="Recorrido y vistas">
+  <button class="btn" id="bTour" aria-label="Reproducir recorrido"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path id="icTour" d="m7 4 13 8-13 8z"/></svg><span id="tTour">Recorrido</span></button>
+  <button class="btn" id="bReini" aria-label="Reiniciar recorrido"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg><span>Reiniciar</span></button>
+  <div class="sep"></div>
+  <button class="btn" data-vista="contexto">Contexto urbano</button>
+  <button class="btn" data-vista="aerea">Vista aérea</button>
+  <button class="btn" data-vista="cubiertas">Cubiertas</button>
+  <button class="btn" data-vista="axono">Axonometría</button>
+  <button class="btn" data-vista="exterior">Exterior</button>
+  <button class="btn" data-vista="inicio">Vista inicial</button>
+</div>
+<div class="chip" id="escena"><b id="eNum">01</b><span id="eTxt">Contexto urbano</span></div>
 <div id="ficha"><button class="btn redondo cerrar" id="fCerrar" aria-label="Cerrar">✕</button><h2 id="fTit"></h2><p id="fTxt"></p></div>
 <div id="atrib">Imágenes 3D: Google · Render: Cesium · <a href="./index.html" style="color:var(--acento)">Giro fotorrealista</a></div>
 
@@ -147,12 +168,183 @@
     $('cargaTxt').textContent = 'No se pudo cargar la ciudad 3D de Google (revisa la llave en config.js)';
   }
 
-  // ---- cámara del giro ----
-  function ponerCamara() {
-    const a = 2 * Math.PI * pos / G.N;
-    const objetivo = C.Cartesian3.fromDegrees(centro.lon, centro.lat, G.H + G.OBJ_Z);
-    const pitch = -Math.atan2(G.ALTO - G.OBJ_Z, G.RADIO), rango = Math.hypot(G.RADIO, G.ALTO - G.OBJ_Z);
-    cam.lookAt(objetivo, new C.HeadingPitchRange(a + Math.PI, pitch, rango));
+  // ---- Hotel La Fontana: modelo real (ref. hotel_la_fontana: losa Revit P2 + catastro + cubiertas) ----
+  // La fotogrametría de Google trae el hotel actual: se recorta SOLO dentro de la huella de cada volumen
+  // del hotel (+ margen) y en su lugar se pone el GLB, para que no haya dos hoteles superpuestos.
+  // Generado por herramientas/geo_hotel.mjs y herramientas/servidor_exportar.mjs (ver HOTEL_REAL.md).
+  viewer.clock.currentTime = C.JulianDate.fromIso8601('2026-03-20T15:30:00Z'); // 10:30 a. m. en Bogotá: luz de día fija
+  viewer.clock.shouldAnimate = false;
+  const HOTEL = { lon: centro.lon, lat: centro.lat, suelo: G.H, listo: false };
+  const suelo = () => HOTEL.suelo;
+  (async () => {
+    let geo;
+    try { geo = await (await fetch('modelos/hotel_geo.json')).json(); } catch (e) { console.warn('hotel_geo.json:', e); return; }
+    const vert = geo.recorte.flat();
+    HOTEL.lon = vert.reduce((s, p) => s + p[0], 0) / vert.length;
+    HOTEL.lat = vert.reduce((s, p) => s + p[1], 0) / vert.length;
+    // cota del terreno: altura de la malla de Google en los bordes de la huella (fuera del edificio), cuantil 25 %
+    if (tiles) {
+      try {
+        const muestras = vert.filter((_, i) => i % 2 === 0).map(([lo, la]) => C.Cartographic.fromDegrees(lo, la));
+        const r = await Promise.race([scene.sampleHeightMostDetailed(muestras), new Promise(res => setTimeout(() => res(null), 20000))]);
+        const h = (r || []).map(c => c.height).filter(Number.isFinite).sort((a, b) => a - b);
+        if (h.length > 5) HOTEL.suelo = h[Math.floor(h.length * 0.25)];
+      } catch (e) { console.warn('cota del terreno:', e); }
+      if (!/sinrecorte/.test(location.search)) tiles.clippingPolygons = new C.ClippingPolygonCollection({
+        polygons: geo.recorte.map(P => {
+          const pol = new C.ClippingPolygon({ positions: C.Cartesian3.fromDegreesArray(P.flat()) });
+          // Cesium recalcula este rectángulo por cada tesela y cada cuadro (costo ∝ vértices): el polígono no cambia, se guarda
+          const rect = pol.computeRectangle();
+          pol.computeRectangle = r => C.Rectangle.clone(rect, r);
+          return pol;
+        })
+      });
+    }
+    // piso bajo el área recortada (el anillo de margen alrededor de las fachadas no puede quedar vacío)
+    if (tiles && !/sinrecorte/.test(location.search)) {
+      scene.primitives.add(new C.Primitive({
+        geometryInstances: geo.recorte.map(P => new C.GeometryInstance({
+          geometry: new C.PolygonGeometry({ polygonHierarchy: new C.PolygonHierarchy(C.Cartesian3.fromDegreesArray(P.flat())), height: HOTEL.suelo + 0.03 }),
+          attributes: { color: C.ColorGeometryInstanceAttribute.fromColor(C.Color.fromCssColorString('#6b665c')) }
+        })),
+        appearance: new C.PerInstanceColorAppearance({ flat: true, translucent: false }),
+        asynchronous: false
+      }));
+    }
+    try {
+      const o = C.Cartesian3.fromDegrees(geo.origen[0], geo.origen[1], HOTEL.suelo);
+      // ajuste medido contra Google (ver hotel_geo.json → ajuste): giro en planta + traslación, en ENU
+      const aj = geo.ajuste || { giro_rad: 0, centro_enu_m: [0, 0], traslacion_enu_m: [0, 0] };
+      const R = C.Matrix3.fromRotationZ(aj.giro_rad), [ce, cn] = aj.centro_enu_m, [te, tn] = aj.traslacion_enu_m;
+      const Rc = C.Matrix3.multiplyByVector(R, new C.Cartesian3(ce, cn, 0), new C.Cartesian3());
+      const local = C.Matrix4.fromRotationTranslation(R, new C.Cartesian3(ce - Rc.x + te, cn - Rc.y + tn, 0));
+      const modelo = await C.Model.fromGltfAsync({
+        url: 'modelos/hotel_la_fontana.glb', modelMatrix: C.Matrix4.multiply(C.Transforms.eastNorthUpToFixedFrame(o), local, new C.Matrix4()),
+        backFaceCulling: false, shadows: C.ShadowMode.DISABLED,
+        upAxis: C.Axis.Y, forwardAxis: C.Axis.X // glTF: +Y arriba, -Z norte (solo corrección Y->Z)
+      });
+      if (/solomodelo/.test(location.search) && tiles) tiles.show = false;
+      if (/sinmodelo/.test(location.search)) modelo.show = false;
+      if (/transp/.test(location.search)) modelo.color = C.Color.WHITE.withAlpha(0.45);
+      scene.primitives.add(modelo);
+      HOTEL.modelo = modelo; HOTEL.listo = true;
+      console.info('[hotel] cota', HOTEL.suelo.toFixed(2), 'm, recorte', geo.recorte.length, 'volúmenes');
+    } catch (e) { console.warn('Modelo del hotel:', e); }
+  })();
+
+  // ---- cámara: un solo estado (objetivo, rumbo, inclinación, distancia, campo de visión) ----
+  // El giro original es el modo manual; el recorrido y las vistas se interpolan sobre el mismo estado,
+  // así que pasar de uno a otro nunca produce saltos.
+  const RAD = Math.PI / 180, FOV_GIRO = 2 * Math.atan((G.SENSOR_W / 2) / G.FOCAL) / RAD;
+  const ORB0 = { lon: centro.lon, lat: centro.lat, z: G.H + G.OBJ_Z, pt: -Math.atan2(G.ALTO - G.OBJ_Z, G.RADIO) / RAD, rg: Math.hypot(G.RADIO, G.ALTO - G.OBJ_Z), fov: FOV_GIRO };
+  let orb = { ...ORB0 }; // parámetros del giro manual (el rumbo sale de pos)
+  const rumboDe = p => (360 * p / G.N + 180);
+  const posDe = hd => (hd - 180) * G.N / 360;
+  const estadoGiro = () => ({ ...orb, hd: rumboDe(pos) });
+  let E = estadoGiro();
+  function aplicar(s) {
+    const pt = Math.min(-4, Math.max(-89.5, s.pt)), rg = Math.max(60, s.rg);
+    cam.frustum.fov = s.fov * RAD;
+    cam.lookAt(C.Cartesian3.fromDegrees(s.lon, s.lat, s.z), new C.HeadingPitchRange(s.hd * RAD, pt * RAD, rg));
+  }
+  function ponerCamara() { aplicar(E); }
+
+  // interpolación: rumbo por el camino corto, distancia en escala logarítmica
+  const mezclar = (a, b, k) => ({
+    lon: a.lon + (b.lon - a.lon) * k, lat: a.lat + (b.lat - a.lat) * k, z: a.z + (b.z - a.z) * k,
+    hd: a.hd + (b.hd - a.hd) * k, pt: a.pt + (b.pt - a.pt) * k,
+    rg: Math.exp(Math.log(a.rg) + (Math.log(b.rg) - Math.log(a.rg)) * k), fov: a.fov + (b.fov - a.fov) * k
+  });
+  const cercano = (hd, ref) => hd + 360 * Math.round((ref - hd) / 360);
+
+  // ---- recorrido cinematográfico (7 escenas) ----
+  // claves en coordenadas del hotel; el rumbo crece de forma continua durante la órbita
+  const H = () => ({ lon: HOTEL.lon, lat: HOTEL.lat, z: suelo() + 12 });
+  const CTX = () => ({ lon: (HOTEL.lon + -74.04145) / 2, lat: (HOTEL.lat + 4.70208) / 2, z: suelo() + 20 });
+  const AXO_FOV = 22, AXO_RG = 300 * Math.tan(25 * RAD) / Math.tan(AXO_FOV / 2 * RAD); // mismo encuadre, casi sin perspectiva
+  const CLAVES = () => [
+    { t: 0,   e: 1, ...CTX(), hd: 15,  pt: -38, rg: 2600, fov: 50 },
+    { t: 9,   e: 1, ...H(),   hd: 35,  pt: -30, rg: 950,  fov: 50 },
+    { t: 16,  e: 2, ...H(),   hd: 55,  pt: -22, rg: 360,  fov: 50 },
+    { t: 23,  e: 3, ...H(),   hd: 75,  pt: -20, rg: 290,  fov: 50 },
+    { t: 37,  e: 3, ...H(),   hd: 375, pt: -20, rg: 290,  fov: 50 },
+    { t: 44,  e: 4, ...H(),   hd: 405, pt: -64, rg: 270,  fov: 50 },
+    { t: 51,  e: 5, ...H(),   hd: 405, pt: -35.3, rg: AXO_RG, fov: AXO_FOV },
+    { t: 56,  e: 5, ...H(),   hd: 420, pt: -35.3, rg: AXO_RG, fov: AXO_FOV },
+    { t: 63,  e: 6, ...H(),   hd: 470, pt: -11, rg: 185,  fov: 50 },
+    { t: 70,  e: 6, ...H(),   hd: 500, pt: -9,  rg: 175,  fov: 50 },
+    { t: 80,  e: 7, ...ORB0, hd: cercano(rumboDe(18), 500), fov: FOV_GIRO },
+    { t: 84,  e: 7, ...ORB0, hd: cercano(rumboDe(18), 500), fov: FOV_GIRO }
+  ];
+  const ESCENAS = ['', 'Contexto urbano', 'Aproximación', 'Presentación del hotel', 'Cubiertas', 'Axonometría', 'Fachadas', 'Regreso al masterplan'];
+  // Catmull-Rom (velocidad continua entre claves; solo frena al principio y al final)
+  function muestraTour(K, t) {
+    t = Math.max(0, Math.min(K.at(-1).t, t));
+    let i = 0; while (i < K.length - 2 && t > K[i + 1].t) i++;
+    const p0 = K[Math.max(0, i - 1)], p1 = K[i], p2 = K[i + 1], p3 = K[Math.min(K.length - 1, i + 2)];
+    const u = (t - p1.t) / (p2.t - p1.t), u2 = u * u, u3 = u2 * u;
+    const cr = (a, b, c, d) => 0.5 * ((2 * b) + (-a + c) * u + (2 * a - 5 * b + 4 * c - d) * u2 + (-a + 3 * b - 3 * c + d) * u3);
+    const s = {};
+    for (const k of ['lon', 'lat', 'z', 'hd', 'pt', 'fov']) s[k] = cr(p0[k], p1[k], p2[k], p3[k]);
+    s.rg = Math.exp(cr(Math.log(p0.rg), Math.log(p1.rg), Math.log(p2.rg), Math.log(p3.rg)));
+    s.e = t >= p2.t - 1e-6 ? p2.e : p1.e;
+    return s;
+  }
+  // tiempo con aceleración suave al arrancar y frenado al llegar
+  const TOUR = { activo: false, t: 0, K: null, mezcla: null, fin: 0 };
+  const RAMPA = 3; // s de arranque y de frenado
+  const DUR = () => TOUR.K.at(-1).t + RAMPA; // duración real (s)
+  function tiempoSuave(t) { // tiempo real -> tiempo del recorrido, velocidad 0 -> 1 -> 0
+    const a = RAMPA, T = DUR(), D = T - a;
+    if (t <= 0) return 0; if (t >= T) return D;
+    if (t < a) return t * t / (2 * a);
+    if (t > T - a) return D - (T - t) * (T - t) / (2 * a);
+    return t - a / 2;
+  }
+  const tourSample = () => muestraTour(TOUR.K, tiempoSuave(TOUR.t));
+  function mostrarEscena(e) {
+    if (!e) { $('escena').classList.remove('on'); return; }
+    $('eNum').textContent = '0' + e; $('eTxt').textContent = ESCENAS[e]; $('escena').classList.add('on');
+  }
+  function botonTour() {
+    const on = TOUR.activo;
+    $('bTour').classList.toggle('on', on);
+    $('icTour').setAttribute('d', on ? 'M7 4v16M17 4v16' : 'm7 4 13 8-13 8z');
+    $('tTour').textContent = on ? 'Pausar' : (TOUR.K && TOUR.t > 0 && TOUR.t < DUR() ? 'Continuar' : 'Recorrido');
+  }
+  function iniciarTour(desde0) {
+    pararAuto(); vel = 0; giroBtn = null; IR = null;
+    if (desde0 || !TOUR.K || TOUR.t >= DUR()) {
+      TOUR.K = CLAVES(); TOUR.t = 0;
+      const giro = cercano(TOUR.K[0].hd, E.hd) - TOUR.K[0].hd; // alinear con las vueltas que ya dio el usuario
+      TOUR.K.forEach(k => { k.hd += giro; });
+    }
+    // entrar desde la vista actual sin salto: 2,5 s de mezcla hacia el recorrido (rumbo por el camino corto)
+    const de = { ...E }; de.hd = cercano(de.hd, tourSample().hd);
+    TOUR.mezcla = { de, t0: performance.now() };
+    TOUR.activo = true; botonTour();
+  }
+  function soltarTour() { // el usuario toma el control: el giro manual sigue desde la vista actual
+    if (!TOUR.activo) return;
+    TOUR.activo = false; TOUR.mezcla = null;
+    orb = { lon: E.lon, lat: E.lat, z: E.z, pt: E.pt, rg: E.rg, fov: E.fov };
+    pos = posDe(E.hd); botonTour(); mostrarEscena(0);
+  }
+
+  // ---- vistas fijas ----
+  let IR = null; // transición a una vista: { de, a, t0, dur }
+  const VISTAS = {
+    contexto: () => ({ ...CTX(), hd: 15, pt: -38, rg: 2600, fov: 50 }),
+    aerea: () => ({ ...H(), hd: 35, pt: -42, rg: 520, fov: 50 }),
+    cubiertas: () => ({ ...H(), hd: 25, pt: -66, rg: 270, fov: 50 }),
+    axono: () => ({ ...H(), hd: 45, pt: -35.3, rg: AXO_RG, fov: AXO_FOV }),
+    exterior: () => ({ ...H(), hd: 200, pt: -10, rg: 190, fov: 50 }),
+    inicio: () => ({ ...ORB0, hd: rumboDe(18) })
+  };
+  function irA(nombre) {
+    soltarTour(); pararAuto(); vel = 0; giroBtn = null;
+    const a = VISTAS[nombre](); a.hd = cercano(a.hd, E.hd);
+    IR = { de: { ...E }, a, t0: performance.now(), dur: nombre === 'contexto' || E.rg > 1500 ? 4200 : 3000 };
   }
   const actual = () => ((Math.round(pos) % G.N) + G.N) % G.N;
 
@@ -185,7 +377,13 @@
   // ---- interacción: arrastrar de lado = girar ----
   const vista = $('vista'), PX_POR_VISTA = () => Math.max(8, innerWidth / 90);
   const pararAuto = () => { auto = false; $('bAuto').classList.remove('on'); };
+  // tomar el control en cualquier momento: el giro manual continúa desde la vista que se ve
+  function tomarControl() {
+    soltarTour();
+    if (IR) { orb = { lon: E.lon, lat: E.lat, z: E.z, pt: E.pt, rg: E.rg, fov: E.fov }; pos = posDe(E.hd); IR = null; }
+  }
   vista.addEventListener('pointerdown', e => {
+    tomarControl();
     arrastre = { x: e.clientX, p: pos }; ultimoX = e.clientX; ultimoT = performance.now(); vel = 0; giroBtn = null;
     pararAuto(); vista.classList.add('arrastrando'); vista.setPointerCapture(e.pointerId); $('ayuda').classList.remove('on');
   });
@@ -200,26 +398,46 @@
   vista.addEventListener('pointerup', soltar); vista.addEventListener('pointercancel', soltar);
 
   vista.addEventListener('wheel', e => {
-    pararAuto();
+    tomarControl(); pararAuto();
     pos += Math.sign(e.deltaX || e.deltaY);
   }, { passive: true });
 
-  const girar = d => { pararAuto(); vel = 0; giroBtn = { ini: pos, fin: Math.round(pos) + d, t0: performance.now() }; };
+  const girar = d => { tomarControl(); pararAuto(); vel = 0; giroBtn = { ini: pos, fin: Math.round(pos) + d, t0: performance.now() }; };
   $('bIzq').onclick = () => girar(-3); $('bDer').onclick = () => girar(3);
-  $('bAuto').onclick = () => { auto = !auto; $('bAuto').classList.toggle('on', auto); };
+  $('bAuto').onclick = () => { tomarControl(); auto = !auto; $('bAuto').classList.toggle('on', auto); };
+  $('bTour').onclick = () => { if (TOUR.activo) { soltarTour(); TOUR.pausado = true; botonTour(); } else iniciarTour(false); };
+  $('bReini').onclick = () => iniciarTour(true);
+  document.querySelectorAll('[data-vista]').forEach(b => b.onclick = () => irA(b.dataset.vista));
   $('fCerrar').onclick = () => $('ficha').classList.remove('on');
   addEventListener('keydown', e => {
-    if (e.key === 'ArrowLeft') pos -= 1; if (e.key === 'ArrowRight') pos += 1;
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { tomarControl(); pos += e.key === 'ArrowLeft' ? -1 : 1; }
+    if (e.key === ' ' && e.target === document.body) { e.preventDefault(); $('bTour').click(); }
     if (e.key === 'Escape') $('ficha').classList.remove('on');
   });
 
   // ---- bucle ----
   const suave = k => k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
   let gradosPrev = -1;
+  let antes = performance.now();
   scene.preUpdate.addEventListener(() => {
-    const now = performance.now();
+    const now = performance.now(), dt = Math.min(0.1, (now - antes) / 1000); antes = now;
+    if (TOUR.activo) {
+      TOUR.t += dt;
+      let s = tourSample();
+      if (TOUR.mezcla) { const k = Math.min(1, (now - TOUR.mezcla.t0) / 2500); s = { ...mezclar(TOUR.mezcla.de, s, suave(k)), e: s.e }; if (k >= 1) TOUR.mezcla = null; }
+      E = s; pos = posDe(E.hd); mostrarEscena(s.e);
+      if (TOUR.t >= DUR()) { soltarTour(); TOUR.t = DUR(); botonTour(); }
+      ponerCamara(); return;
+    }
+    if (IR) {
+      const k = Math.min(1, (now - IR.t0) / IR.dur);
+      E = mezclar(IR.de, IR.a, suave(k)); pos = posDe(E.hd);
+      if (k >= 1) { orb = { lon: IR.a.lon, lat: IR.a.lat, z: IR.a.z, pt: IR.a.pt, rg: IR.a.rg, fov: IR.a.fov }; pos = posDe(IR.a.hd); IR = null; }
+      ponerCamara(); return;
+    }
     if (giroBtn) { const k = Math.min(1, (now - giroBtn.t0) / 450); pos = giroBtn.ini + (giroBtn.fin - giroBtn.ini) * suave(k); if (k >= 1) giroBtn = null; }
     else if (!arrastre) { if (auto) pos += 0.06; else { pos += vel; vel *= 0.93; if (Math.abs(vel) < 0.005) vel = 0; } }
+    E = estadoGiro();
     ponerCamara();
   });
   scene.postRender.addEventListener(() => {
@@ -235,6 +453,11 @@
     if (abierta) return; abierta = true;
     $('carga').classList.add('fuera');
     setTimeout(() => $('ayuda').classList.add('on'), 700); setTimeout(() => $('ayuda').classList.remove('on'), 7500);
+    // enlaces directos: ?vista=cubiertas  ·  ?tour  (o ?tour=SEGUNDOS para empezar en ese punto)
+    const q = new URLSearchParams(location.search);
+    if (VISTAS[q.get('vista')]) { const a = VISTAS[q.get('vista')](); orb = { lon: a.lon, lat: a.lat, z: a.z, pt: a.pt, rg: a.rg, fov: a.fov }; pos = posDe(a.hd); }
+    if (q.get('cam')) { const [hd, pt, rg, fov] = q.get('cam').split(',').map(Number); orb = { ...H(), pt, rg, fov: fov || 50 }; pos = posDe(hd); }
+    if (q.has('tour')) { iniciarTour(true); TOUR.t = Math.max(0, +q.get('tour') || 0); TOUR.mezcla = null; if (q.has('pausa')) { E = tourSample(); soltarTour(); TOUR.pausado = true; botonTour(); } }
   };
   const t0 = performance.now();
   const vigilar = () => {

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Exportar hotel a GLB</title>
+<!-- Se sirve desde la raíz de ref/hotel_la_fontana (ver servidor_exportar.mjs). Usa SUS módulos sin modificarlos. -->
+<script type="importmap">
+{ "imports": {
+  "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<pre id="log">exportando…</pre>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+import { MaterialLibrary } from '/src/scene/MaterialLibrary.js';
+import { HotelBuildingBuilder } from '/src/scene/HotelBuildingBuilder.js';
+
+const log = (...a) => { document.getElementById('log').textContent += '\n' + a.join(' '); console.log(...a); };
+const post = (path, body, type) => fetch(path, { method: 'POST', headers: { 'Content-Type': type }, body });
+
+try {
+  const renderer = new THREE.WebGLRenderer({ antialias: false });
+  renderer.setSize(64, 64);
+  const materials = new MaterialLibrary(renderer);
+  materials.initAll();
+
+  const j = p => fetch(p).then(r => r.json());
+  const [arch, catastro, revitWindows, roofs] = await Promise.all([
+    j('/data/geometry/p2-architecture.json'),
+    j('/data/geometry/catastro-buildings-3d.json'),
+    j('/data/geometry/p2-windows-revit.json'),
+    j('/data/geometry/hotel-roofs.json')
+  ]);
+  // Igual que MasterplanScene con contexto urbano: solo las partes del hotel (isHotel), sin vías ni árboles
+  const builder = new HotelBuildingBuilder(materials);
+  // sin árboles ni carros: el entorno (vegetación, vías) lo aporta Google 3D en TLF
+  builder.buildRealisticTrees = () => {};
+  builder.buildRealisticVehicles = () => {};
+  const root = builder.build(arch, catastro.filter(b => b.isHotel), {}, revitWindows, roofs);
+  if (builder.groundPlane) builder.groundPlane.removeFromParent();
+
+  // esperar a que carguen las texturas PBR que MaterialLibrary pide en segundo plano
+  await new Promise(r => setTimeout(r, 12000));
+  const scene = new THREE.Scene();
+  scene.add(root);
+  root.updateMatrixWorld(true);
+
+  // quitar lo que glTF no representa (líneas de borde, sprites, luces puntuales)
+  const quitar = [];
+  root.traverse(o => { if (o.isLine || o.isLineSegments || o.isPoints || o.isSprite || o.isLight) quitar.push(o); if (o.isMesh && !o.visible) quitar.push(o); });
+  quitar.forEach(o => o.removeFromParent());
+
+  let mallas = 0, tris = 0, inst = 0;
+  const box = new THREE.Box3().setFromObject(root);
+  root.traverse(o => {
+    if (!o.isMesh) return;
+    mallas++; if (o.isInstancedMesh) inst++;
+    const g = o.geometry, n = g.index ? g.index.count / 3 : g.attributes.position.count / 3;
+    tris += n * (o.isInstancedMesh ? o.count : 1);
+    // materiales con shaders modificados: glTF solo guarda los parámetros PBR estándar
+    const ms = Array.isArray(o.material) ? o.material : [o.material];
+    ms.forEach(m => { if (m && !m.isMeshStandardMaterial && !m.isMeshBasicMaterial) log('material no estándar:', m.type, m.name); });
+  });
+  const resumen = { mallas, instanciadas: inst, triangulos: Math.round(tris), bbox: { min: box.min.toArray(), max: box.max.toArray() } };
+  log(JSON.stringify(resumen));
+
+  const glb = await new GLTFExporter().parseAsync(scene, { binary: true, maxTextureSize: 1024, onlyVisible: true });
+  await post('/guardar?f=hotel_bruto.glb', glb, 'application/octet-stream');
+  await post('/guardar?f=hotel_resumen.json', JSON.stringify(resumen, null, 1), 'application/json');
+  log('LISTO');
+  await post('/fin', 'ok', 'text/plain');
+} catch (e) {
+  log('ERROR', e.stack || e);
+  await post('/fin', 'error: ' + (e.stack || e), 'text/plain');
+}
+</script>
+</body>
+</html>
